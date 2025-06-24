@@ -1,0 +1,5 @@
+env
+secrets.txt
+backups/
+backups_secret_clean/
+rita_mega_bot.py-
