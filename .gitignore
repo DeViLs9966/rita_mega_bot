@@ -4,3 +4,6 @@
 __pycache__/
 .env
 .env
+keys.env
+.token_clean
+.chat_id
