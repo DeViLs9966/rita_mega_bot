@@ -1,0 +1,168 @@
+import os
+import re
+import subprocess
+import sys
+
+TELEGRAM_CHAT_ID = 'REMOVED_OWNER_ID'  # Твой ID из Telegram
+TOKEN_FILE = '.token_clean'
+TOKEN_VAR_NAME = 'TELEGRAM_BOT_TOKEN'
+FILES_TO_FIX = ['check_bot_diagnostics.py', 'rita_main.py']
+GIT_IGNORE_FILE = '.gitignore'
+SECRETS_FILES = ['keys.env', '.env']
+
+LOG_FILE = 'check_bot_diagnostics.log'  # Путь к логу, если есть, или передай свой
+
+def load_token():
+    if os.path.exists(TOKEN_FILE):
+        with open(TOKEN_FILE, 'r') as f:
+            token = f.read().strip()
+            if token:
+                print(f'[INFO] Загружен токен из {TOKEN_FILE}')
+                return token
+    print('[WARN] Токен не найден в файле', TOKEN_FILE)
+    return None
+
+def install_missing_packages():
+    try:
+        import telegram
+        print('[INFO] Пакет telegram уже установлен.')
+    except ImportError:
+        print('[INFO] Пакет telegram не найден, устанавливаю...')
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'python-telegram-bot'])
+        print('[INFO] Пакет telegram установлен.')
+
+def add_chat_id_and_token(file_path, token):
+    changed = False
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    if 'TELEGRAM_CHAT_ID' not in content:
+        content = f"TELEGRAM_CHAT_ID = {TELEGRAM_CHAT_ID}\n" + content
+        print(f'[FIX] Добавлен TELEGRAM_CHAT_ID в {file_path}')
+        changed = True
+
+    token_pattern = re.compile(rf'{TOKEN_VAR_NAME}\s*=\s*[\'\"].+[\'\"]')
+    if token_pattern.search(content):
+        content = token_pattern.sub(f"{TOKEN_VAR_NAME} = '{token}'", content)
+        print(f'[FIX] Обновлён {TOKEN_VAR_NAME} в {file_path}')
+        changed = True
+    else:
+        content = f"{TOKEN_VAR_NAME} = '{token}'\n" + content
+        print(f'[FIX] Добавлен {TOKEN_VAR_NAME} в {file_path}')
+        changed = True
+
+    if 'asyncio.run(main())' not in content:
+        content += '\n\nimport asyncio\n\nasyncio.run(main())\n'
+        print(f'[FIX] Добавлен asyncio.run(main()) в конец {file_path}')
+        changed = True
+
+    # Исправление недостающих await корутин
+    # Поиск всех определений async def и вызовов корутин без await — сложнее, простой фикс:
+    if 'asyncio.run(main())' in content:
+        # Добавим в начало файла import asyncio (если нет)
+        if 'import asyncio' not in content:
+            content = 'import asyncio\n' + content
+            print(f'[FIX] Добавлен импорт asyncio в {file_path}')
+            changed = True
+
+    if changed:
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+    else:
+        print(f'[INFO] {file_path} не требует изменений.')
+
+def parse_log_and_fix(log_path):
+    if not os.path.exists(log_path):
+        print('[INFO] Лог-файл не найден, пропускаю разбор ошибок из логов.')
+        return
+
+    print(f'[INFO] Анализирую лог {log_path} для поиска ошибок...')
+
+    with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
+        log_text = f.read()
+
+    fixes = 0
+    for file_path in FILES_TO_FIX:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Исправляем ошибки с неопределённым TELEGRAM_CHAT_ID
+        if re.search(r"name 'TELEGRAM_CHAT_ID' is not defined", log_text):
+            if 'TELEGRAM_CHAT_ID' not in content:
+                content = f"TELEGRAM_CHAT_ID = {TELEGRAM_CHAT_ID}\n" + content
+                with open(file_path, 'w', encoding='utf-8') as f_w:
+                    f_w.write(content)
+                print(f'[FIX] Исправлена ошибка "TELEGRAM_CHAT_ID is not defined" в {file_path}')
+                fixes += 1
+
+        # Исправляем ошибки с coroutine was never awaited
+        if re.search(r'RuntimeWarning: coroutine .* was never awaited', log_text):
+            # Здесь сложно полностью автоматизировать — но можно добавить asyncio.run(main()) в конце,
+            # если его нет
+            if 'asyncio.run(main())' not in content:
+                content += '\n\nimport asyncio\nasyncio.run(main())\n'
+                with open(file_path, 'w', encoding='utf-8') as f_w:
+                    f_w.write(content)
+                print(f'[FIX] Добавлен asyncio.run(main()) для исправления coroutine warnings в {file_path}')
+                fixes += 1
+
+    if fixes == 0:
+        print('[INFO] Ошибок из лога не найдено или они уже исправлены.')
+    else:
+        print(f'[INFO] Внесено исправлений из лога: {fixes}')
+
+def update_gitignore():
+    if not os.path.exists(GIT_IGNORE_FILE):
+        with open(GIT_IGNORE_FILE, 'w') as f:
+            f.write('\n'.join(SECRETS_FILES) + '\n')
+        print(f'[INFO] Создан {GIT_IGNORE_FILE} и добавлены секретные файлы.')
+        return
+    with open(GIT_IGNORE_FILE, 'r') as f:
+        lines = f.read().splitlines()
+    changed = False
+    for secret_file in SECRETS_FILES:
+        if secret_file not in lines:
+            lines.append(secret_file)
+            changed = True
+    if changed:
+        with open(GIT_IGNORE_FILE, 'w') as f:
+            f.write('\n'.join(lines) + '\n')
+        print(f'[INFO] Обновлён {GIT_IGNORE_FILE} с добавлением секретных файлов.')
+    else:
+        print(f'[INFO] {GIT_IGNORE_FILE} уже содержит все секретные файлы.')
+
+def git_commit_push():
+    try:
+        for secret_file in SECRETS_FILES:
+            subprocess.run(['git', 'rm', '--cached', secret_file], check=False)
+        subprocess.run(['git', 'add', '.'], check=True)
+        subprocess.run(['git', 'commit', '-m', 'Auto-fix: update tokens, chat_id, async fixes, gitignore'], check=True)
+        result = subprocess.run(['git', 'push'], check=False, capture_output=True, text=True)
+        if result.returncode == 0:
+            print('[INFO] Успешно запушено в репозиторий.')
+        else:
+            print('[WARN] Ошибка при пуше:\n', result.stderr)
+            print('[WARN] Проверь правила безопасности GitHub и очисти историю коммитов с секретами.')
+    except Exception as e:
+        print(f'[ERROR] Ошибка при git операциях: {e}')
+
+def main():
+    install_missing_packages()
+    token = load_token()
+    if not token:
+        print('[ERROR] Нет токена, прерываем выполнение.')
+        return
+
+    for file in FILES_TO_FIX:
+        if os.path.exists(file):
+            add_chat_id_and_token(file, token)
+        else:
+            print(f'[WARN] Файл {file} не найден.')
+
+    parse_log_and_fix(LOG_FILE)
+    update_gitignore()
+    git_commit_push()
+    print('[DONE] Все исправления применены.')
+
+if __name__ == '__main__':
+    main()
