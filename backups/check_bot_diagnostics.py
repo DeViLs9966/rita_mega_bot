@@ -780,7 +780,7 @@ def calculate_hash(file_path: Path) -> str:
 
 
 from telegram import Update
-# # # from telegram.ext import ContextTypes  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError
+# # from telegram.ext import ContextTypes  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError
 
 async def cmd_update_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_TELEGRAM_ID:
@@ -1208,7 +1208,7 @@ import hashlib
 import time
 from pathlib import Path
 from telegram import Bot
-# # # from telegram.ext import ContextTypes  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError
+# # from telegram.ext import ContextTypes  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError
 
 # Ключи и настройки (вставь свои реальные)
 import os
