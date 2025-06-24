@@ -1,0 +1,67 @@
+import os
+import re
+from dotenv import load_dotenv
+from telegram import Bot
+import requests
+
+ENV_PATH = ".env"
+
+def clean_token(token):
+    """Удаляет лишние пробелы и переносы"""
+    return token.replace(" ", "").replace("\n", "").strip()
+
+def load_and_fix_env():
+    print("🔍 Загружаем переменные из .env...")
+
+    # Загружаем текущие переменные
+    load_dotenv(ENV_PATH)
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    fixed_token = clean_token(token)
+
+    if not fixed_token or ":" not in fixed_token:
+        print("❌ Неверный формат токена. Убедитесь, что токен получен от @BotFather.")
+        return None
+
+    if token != fixed_token:
+        print("⚠️ Токен содержит лишние пробелы или символы — исправляем...")
+
+        # Читаем и правим файл .env
+        with open(ENV_PATH, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        with open(ENV_PATH, "w", encoding="utf-8") as f:
+            for line in lines:
+                if line.startswith("TELEGRAM_BOT_TOKEN"):
+                    f.write(f'TELEGRAM_BOT_TOKEN={fixed_token}\n')
+                else:
+                    f.write(line)
+
+        print("✅ Токен в .env исправлен.")
+
+    return fixed_token
+
+def test_telegram_token(token):
+    """Проверка токена через Telegram API"""
+    url = f"https://api.telegram.org/bot{token}/getMe"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.ok:
+            data = response.json()
+            if data.get("ok"):
+                print(f"✅ Токен действителен. Бот: @{data['result']['username']}")
+                return True
+            else:
+                print("❌ Ответ Telegram API: ошибка:", data.get("description"))
+        else:
+            print(f"❌ HTTP ошибка: {response.status_code}")
+    except Exception as e:
+        print(f"❌ Ошибка при обращении к Telegram API: {e}")
+    return False
+
+if __name__ == "__main__":
+    print("🛠️ Запуск fix_token_issue.py")
+    token = load_and_fix_env()
+    if token:
+        test_telegram_token(token)
+    else:
+        print("🚫 Не удалось исправить токен.")

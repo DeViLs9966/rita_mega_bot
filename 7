@@ -1,0 +1,81 @@
+import os
+import asyncio
+from telegram import Bot
+from dotenv import load_dotenv
+
+TOKEN_FILE = ".token_clean"
+ENV_FILE = ".env"
+FILES_TO_PATCH = ["check_bot_diagnostics.py", "rita_main.py"]
+
+def load_token():
+    if os.path.exists(TOKEN_FILE):
+        with open(TOKEN_FILE, "r") as f:
+            token = f.read().strip()
+        print(f"[DEBUG] Загружен токен из {TOKEN_FILE}: '{token}'")
+        return token
+    if os.path.exists(ENV_FILE):
+        load_dotenv(ENV_FILE)
+        token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+        print(f"[DEBUG] Загружен токен из .env: '{token}'")
+        return token
+    print("❌ Токен не найден.")
+    return ""
+
+async def validate_token(token: str) -> bool:
+    try:
+        bot = Bot(token=token)
+        me = await bot.get_me()
+        print(f"✅ Токен действителен. Бот: @{me.username}")
+        return True
+    except Exception as e:
+        print(f"❌ Токен недействителен: {e}")
+        return False
+
+def patch_file(file_path: str, token: str):
+    if not os.path.exists(file_path):
+        print(f"⚠️ Файл {file_path} не найден.")
+        return
+    with open(file_path, "r") as f:
+        content = f.read()
+
+    # Заменяем существующий токен, если есть
+    content = content.replace("TELEGRAM_BOT_TOKEN = \"\"", f"TELEGRAM_BOT_TOKEN = \"{token}\"")
+    content = content.replace("TELEGRAM_BOT_TOKEN = ''", f"TELEGRAM_BOT_TOKEN = \"{token}\"")
+    content = content.replace("TELEGRAM_BOT_TOKEN = ''", f"TELEGRAM_BOT_TOKEN = \"{token}\"")
+    content = content.replace("TELEGRAM_BOT_TOKEN = os.getenv(\"TELEGRAM_BOT_TOKEN\")", f"TELEGRAM_BOT_TOKEN = \"{token}\"")
+
+    # Удалим возможное создание бота до загрузки токена
+    lines = content.splitlines()
+    new_lines = []
+    for line in lines:
+        if "Bot(token=" in line and "TELEGRAM_BOT_TOKEN" in line:
+            new_lines.append(f"bot = Bot(token=\"{token}\")")
+        else:
+            new_lines.append(line)
+    new_content = "\n".join(new_lines)
+
+    with open(file_path, "w") as f:
+        f.write(new_content)
+
+    print(f"🔧 Обновлён файл: {file_path}")
+
+def save_token(token: str):
+    with open(TOKEN_FILE, "w") as f:
+        f.write(token)
+    print(f"✅ Токен сохранён в {TOKEN_FILE}")
+
+async def main():
+    print("🛠️ Запуск fix_bot_token_and_patch.py")
+    token = load_token()
+    if not token:
+        return
+
+    if await validate_token(token):
+        save_token(token)
+        for file in FILES_TO_PATCH:
+            patch_file(file, token)
+    else:
+        print("❌ Невозможно продолжить: токен недействителен.")
+
+if __name__ == "__main__":
+    asyncio.run(main())

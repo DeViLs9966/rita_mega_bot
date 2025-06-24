@@ -1,0 +1,60 @@
+import os
+import time
+import re
+import json
+import psutil
+import shutil
+import inspect
+import traceback
+import difflib
+from datetime import datetime
+from telegram import Bot
+
+# 🔐 Реальные данные (твой токен и ID)
+TELEGRAM_BOT_TOKEN = "REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART"
+TELEGRAM_ADMIN_ID = REMOVED_OWNER_ID  # твой Telegram ID (int)
+
+bot = Bot(token=TELEGRAM_BOT_TOKEN)
+
+def send_telegram_report(message: str):
+    try:
+        bot.send_message(chat_id=TELEGRAM_ADMIN_ID, text=message)
+    except Exception as e:
+        print(f"[Ошибка Telegram] {e}")
+
+def analyze_script_code(filepath):
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            code = f.read()
+
+        report = "[🤖 Анализ улучшений]\n"
+        required_functions = [
+            "auto_fix_loop", "auto_fix_from_logs", "run_bot", "run_intelligent_auto_improve"
+        ]
+        for func in required_functions:
+            if func in code:
+                report += f"✅ `{func}` присутствует\n"
+            else:
+                report += f"❌ `{func}` отсутствует\n"
+
+        # Метрики производительности
+        cpu = psutil.cpu_percent(interval=1)
+        ram = psutil.virtual_memory().percent
+        report += f"\n📊 CPU: {cpu}%\n🧠 RAM: {ram}%"
+
+        # Создание шаблонов недостающих функций
+        missing = [f for f in required_functions if f not in code]
+        if missing:
+            report += "\n\n📦 Заготовки недостающих функций:\n"
+            for func in missing:
+                report += f"\n```python\ndef {func}():\n    pass  # TODO: реализовать {func}\n```\n"
+
+        send_telegram_report(report)
+
+    except Exception as e:
+        traceback.print_exc()
+        send_telegram_report(f"❌ Ошибка анализа скрипта: {e}")
+
+async def run_intelligent_auto_improve():
+    script_path = os.path.abspath(__file__)
+    analyze_script_code(script_path)

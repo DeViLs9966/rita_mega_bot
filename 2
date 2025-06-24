@@ -1,0 +1,66 @@
+import os
+import re
+
+SCRIPT_PATH = "check_bot_diagnostics.py"
+BACKUP_PATH = "check_bot_diagnostics_backup.py"
+
+def backup_file():
+    with open(SCRIPT_PATH, "r", encoding="utf-8") as original:
+        content = original.read()
+    with open(BACKUP_PATH, "w", encoding="utf-8") as backup:
+        backup.write(content)
+    print("✅ Резервная копия сохранена:", BACKUP_PATH)
+
+def fix_indentation(code_lines):
+    fixed_lines = []
+    for line in code_lines:
+        fixed = line.replace('\t', '    ')  # заменяем табы на 4 пробела
+        fixed_lines.append(fixed)
+    return fixed_lines
+
+def fix_invalid_syntax(lines):
+    fixed = []
+    skip_next = False
+    for line in lines:
+        # Удаляем строки, где есть ошибка незавершённого присваивания
+        if re.match(r"^\s*\w+\s*=\s*#.*", line):
+            continue
+
+        # Автоматически завершаем try без except
+        if re.match(r"^\s*try\s*:\s*$", line):
+            fixed.append(line)
+            fixed.append("    pass  # TODO: try block\n    except Exception as e:\n        print('🛠 Исключение:', e)")
+            skip_next = True
+            continue
+
+        # Игнорируем блоки после автодополнения
+        if skip_next:
+            skip_next = False
+            continue
+
+        fixed.append(line)
+    return fixed
+
+def fix_missing_imports(lines):
+    if any("ContextTypes" in line for line in lines) and not any("from telegram.ext import ContextTypes" in line for line in lines):
+        lines.insert(0, "from telegram.ext import ContextTypes")
+    return lines
+
+def fix_script():
+    with open(SCRIPT_PATH, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    lines = fix_indentation(lines)
+    lines = fix_invalid_syntax(lines)
+    lines = fix_missing_imports(lines)
+
+    with open(SCRIPT_PATH, "w", encoding="utf-8") as f:
+        f.write("".join(lines))
+    print("✅ Ошибки в скрипте исправлены:", SCRIPT_PATH)
+
+if __name__ == "__main__":
+    if not os.path.exists(SCRIPT_PATH):
+        print("❌ Файл не найден:", SCRIPT_PATH)
+    else:
+        backup_file()
+        fix_script()
