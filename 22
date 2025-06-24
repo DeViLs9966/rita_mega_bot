@@ -1,0 +1,125 @@
+import os
+import shutil
+import subprocess
+import re
+
+# --- Настройки ---
+FILES_TO_CLEAN = ['rita_main.py', 'check_bot_diagnostics.py']
+BACKUP_DIR = 'backups_secret_clean'
+ENV_FILE = '.env'
+GITIGNORE_FILE = '.gitignore'
+
+# Ключевые паттерны (регулярки) для поиска секретов:
+SECRET_PATTERNS = [
+    r'OPENAI_API_KEY\s*=\s*["\'].*?["\']',
+    r'HUGGINGFACE_API_KEY\s*=\s*["\'].*?["\']',
+    r'TELEGRAM_BOT_TOKEN\s*=\s*["\'].*?["\']',
+    r'GITHUB_TOKEN\s*=\s*["\'].*?["\']',
+    r'GOOGLE_API_KEY\s*=\s*["\'].*?["\']',
+    r'GOOGLE_CX\s*=\s*["\'].*?["\']',
+    r'["\']sk-[A-Za-z0-9_-]{20,}["\']',  # пример OpenAI ключа
+    r'["\']hf_[A-Za-z0-9_-]{20,}["\']', # пример Hugging Face токена
+]
+
+def backup_files():
+    if not os.path.exists(BACKUP_DIR):
+        os.mkdir(BACKUP_DIR)
+    for f in FILES_TO_CLEAN:
+        if os.path.exists(f):
+            shutil.copy2(f, os.path.join(BACKUP_DIR, f))
+    print(f"[Backup] Созданы копии файлов в папке '{BACKUP_DIR}'")
+
+def clean_files():
+    for filename in FILES_TO_CLEAN:
+        if not os.path.exists(filename):
+            print(f"[Warning] Файл {filename} не найден, пропускаем.")
+            continue
+        with open(filename, 'r', encoding='utf-8') as f:
+            content = f.read()
+        original_content = content
+        for pattern in SECRET_PATTERNS:
+            content = re.sub(pattern, lambda m: f'{m.group(0).split("=")[0]} = ""', content)
+        if content != original_content:
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(content)
+            print(f"[Clean] Очищены секреты в {filename}")
+        else:
+            print(f"[Clean] Секреты в {filename} не найдены")
+
+def add_env_to_gitignore():
+    if os.path.exists(GITIGNORE_FILE):
+        with open(GITIGNORE_FILE, 'r', encoding='utf-8') as f:
+            gitignore = f.read()
+        if ENV_FILE not in gitignore:
+            with open(GITIGNORE_FILE, 'a', encoding='utf-8') as f:
+                f.write(f'\n{ENV_FILE}\n')
+            print(f"[Gitignore] Добавлен '{ENV_FILE}' в {GITIGNORE_FILE}")
+        else:
+            print(f"[Gitignore] '{ENV_FILE}' уже присутствует в {GITIGNORE_FILE}")
+    else:
+        with open(GITIGNORE_FILE, 'w', encoding='utf-8') as f:
+            f.write(f'{ENV_FILE}\n')
+        print(f"[Gitignore] Создан {GITIGNORE_FILE} и добавлен '{ENV_FILE}'")
+
+def create_env_file():
+    if os.path.exists(ENV_FILE):
+        print(f"[Env] Файл {ENV_FILE} уже существует, не перезаписываю.")
+        return
+    with open(ENV_FILE, 'w', encoding='utf-8') as f:
+        f.write(
+            "OPENAI_API_KEY=\n"
+            "HUGGINGFACE_API_KEY=\n"
+            "TELEGRAM_BOT_TOKEN=\n"
+            "GITHUB_TOKEN=\n"
+            "GOOGLE_API_KEY=\n"
+            "GOOGLE_CX=\n"
+        )
+    print(f"[Env] Создан шаблон {ENV_FILE}. Заполни ключи перед запуском бота!")
+
+def run_git_filter_repo():
+    # Проверяем, установлен ли git-filter-repo
+    try:
+        subprocess.run(['git', 'filter-repo', '--help'], capture_output=True, check=True)
+    except Exception:
+        print("[Error] git-filter-repo не найден. Установи его: https://github.com/newren/git-filter-repo")
+        return
+
+    # Создаём файл с паттернами для удаления секретов
+    secrets_file = 'secrets_to_remove.txt'
+    with open(secrets_file, 'w', encoding='utf-8') as f:
+        for pattern in SECRET_PATTERNS:
+            # Просто ключи для удаления (упрощённо)
+            f.write(pattern.replace(r'\s*=\s*["\'].*?["\']', '') + '\n')
+
+    print("[Git] Запускаю очистку истории git от секретов...")
+    try:
+        subprocess.run([
+            'git', 'filter-repo',
+            '--invert-paths',  # удалить файлы из истории? Нет, удаляем строки иначе
+            # '--path', 'path/to/file', # (не используется в данном варианте)
+            '--replace-text', secrets_file
+        ], check=True)
+        print("[Git] История очищена.")
+    except subprocess.CalledProcessError as e:
+        print(f"[Error] Ошибка при запуске git filter-repo: {e}")
+
+def make_clean_commit():
+    print("[Git] Создаю новый коммит без секретов...")
+    try:
+        subprocess.run(['git', 'add'] + FILES_TO_CLEAN, check=True)
+        subprocess.run(['git', 'commit', '-m', 'Clean secrets from code'], check=True)
+        print("[Git] Новый коммит создан.")
+    except subprocess.CalledProcessError as e:
+        print(f"[Error] Ошибка git commit: {e}")
+
+def main():
+    backup_files()
+    clean_files()
+    add_env_to_gitignore()
+    create_env_file()
+    run_git_filter_repo()
+    make_clean_commit()
+    print("[Done] Очистка и подготовка завершены. Проверь, добавь ключи в .env и перезапусти.")
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,178 @@
+import asyncio
+import os
+import sys
+import logging
+import signal
+import subprocess
+from pathlib import Path
+from typing import Optional
+import aiofiles
+import openai
+from telegram import Bot
+from telegram.error import InvalidToken
+
+# === Настройки (вставлены твои реальные данные) ===
+
+TELEGRAM_BOT_TOKEN = " "  # твой Telegram токен
+TELEGRAM_CHAT_ID =    # твой Telegram ID
+OPENAI_API_KEY = " "  # твой OpenAI ключ
+
+RITA_MAIN_SCRIPT = "rita_main.py"
+LOG_FILE_PATH = "rita_bot.log"
+AUTO_FIX_INTERVAL = 300  # 5 минут
+
+# === Логирование ===
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger(__name__)
+
+# === Инициализация бота и OpenAI ===
+bot = Bot(token=TELEGRAM_BOT_TOKEN)
+openai.api_key = OPENAI_API_KEY
+
+# === Вспомогательные функции ===
+
+async def send_telegram_message(text: str):
+    try:
+        await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=text)
+        logger.info(f"Сообщение в Telegram отправлено: {text[:50]}")
+    except InvalidToken:
+        logger.error("Неверный Telegram токен! Проверь настройки.")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"Ошибка при отправке Telegram сообщения: {e}")
+
+def kill_existing_rita_main():
+    """Убить все запущенные процессы rita_main.py, чтобы избежать конфликтов."""
+    try:
+        import psutil
+    except ImportError:
+        logger.error("Требуется установить библиотеку psutil: pip install psutil")
+        return
+
+    count = 0
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            cmdline = proc.info['cmdline']
+            if cmdline and RITA_MAIN_SCRIPT in cmdline:
+                proc.kill()
+                count += 1
+        except Exception:
+            continue
+    if count > 0:
+        logger.info(f"Завершено {count} процессов {RITA_MAIN_SCRIPT}")
+    else:
+        logger.info(f"Процессы {RITA_MAIN_SCRIPT} не найдены")
+
+async def read_log_file() -> Optional[str]:
+    if not os.path.exists(LOG_FILE_PATH):
+        await send_telegram_message("⚠️ Лог файл не найден!")
+        return None
+    try:
+        async with aiofiles.open(LOG_FILE_PATH, mode='r', encoding='utf-8') as f:
+            content = await f.read()
+            return content
+    except Exception as e:
+        logger.error(f"Ошибка чтения лога: {e}")
+        return None
+
+async def read_main_script() -> Optional[str]:
+    if not os.path.exists(RITA_MAIN_SCRIPT):
+        await send_telegram_message("⚠️ Основной скрипт не найден!")
+        return None
+    try:
+        async with aiofiles.open(RITA_MAIN_SCRIPT, mode='r', encoding='utf-8') as f:
+            content = await f.read()
+            return content
+    except Exception as e:
+        logger.error(f"Ошибка чтения основного скрипта: {e}")
+        return None
+
+async def generate_fix_patch(error_log_snippet: str, file_content: str) -> Optional[str]:
+    prompt = (
+        f"В этом фрагменте лога ошибка:\n{error_log_snippet}\n\n"
+        f"Предложи исправления для следующего кода:\n{file_content}\n\n"
+        "Верни исправленный полный код без объяснений."
+    )
+    try:
+        response = await openai.ChatCompletion.acreate(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
+            max_tokens=1500,
+        )
+        fixed_code = response.choices[0].message.content.strip()
+        logger.info("Код исправления получен от OpenAI")
+        return fixed_code
+    except Exception as e:
+        logger.error(f"Ошибка улучшения кода от OpenAI: {e}")
+        return None
+
+async def write_main_script(content: str):
+    try:
+        async with aiofiles.open(RITA_MAIN_SCRIPT, mode='w', encoding='utf-8') as f:
+            await f.write(content)
+        logger.info(f"Основной скрипт {RITA_MAIN_SCRIPT} успешно обновлен")
+        await send_telegram_message("✅ Основной скрипт был автоматически исправлен и обновлен.")
+    except Exception as e:
+        logger.error(f"Ошибка записи основного скрипта: {e}")
+
+async def restart_rita_main():
+    kill_existing_rita_main()
+    # Запуск rita_main.py как отдельного процесса (не блокируя текущий)
+    logger.info(f"Запуск {RITA_MAIN_SCRIPT}...")
+    subprocess.Popen([sys.executable, RITA_MAIN_SCRIPT])
+    await send_telegram_message("🚀 Основной скрипт rita_main.py перезапущен.")
+
+async def analyze_and_fix():
+    log_content = await read_log_file()
+    main_script_content = await read_main_script()
+    if not log_content or not main_script_content:
+        return
+
+    # Возьмем последние 1000 символов лога для анализа
+    error_snippet = log_content[-1000:]
+
+    # Проверяем на наличие слов "error", "exception" или "traceback"
+    if any(word in error_snippet.lower() for word in ["error", "exception", "traceback"]):
+        logger.info("Обнаружены ошибки в логе, пытаемся исправить...")
+        fixed_code = await generate_fix_patch(error_snippet, main_script_content)
+        if fixed_code:
+            await write_main_script(fixed_code)
+            await restart_rita_main()
+        else:
+            await send_telegram_message("⚠️ Не удалось автоматически исправить ошибки.")
+    else:
+        logger.info("Ошибок в логе не найдено, скрипт в порядке.")
+        await send_telegram_message("✅ Улучшений не требуется, скрипт в порядке.")
+
+async def main_loop():
+    await send_telegram_message("🔧 Автоанализ и проверка бота запущены...")
+    while True:
+        try:
+            await analyze_and_fix()
+        except Exception as e:
+            logger.error(f"Ошибка в цикле улучшений: {e}")
+        await asyncio.sleep(AUTO_FIX_INTERVAL)
+
+def shutdown(loop):
+    logger.info("Получен сигнал остановки, завершаем работу...")
+    for task in asyncio.all_tasks(loop):
+        task.cancel()
+
+if __name__ == "__main__":
+    try:
+        loop = asyncio.get_event_loop()
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(sig, lambda: shutdown(loop))
+        loop.run_until_complete(main_loop())
+    except KeyboardInterrupt:
+        logger.info("Выход по Ctrl+C")
+    except Exception as e:
+        logger.error(f"Критическая ошибка: {e}")
+    finally:
+        loop.close()
+        logger.info("Скрипт остановлен.")

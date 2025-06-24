@@ -1,0 +1,115 @@
+import os
+import re
+import shutil
+import subprocess
+import logging
+
+# Пути к основным скриптам и логу
+MAIN_SCRIPT = "rita_main.py"
+CHECK_SCRIPT = "check_bot_diagnostics.py"
+LOG_FILE = "rita_bot.log"
+BACKUP_DIR = "backups"
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+def backup_file(file_path):
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    backup_path = os.path.join(BACKUP_DIR, os.path.basename(file_path))
+    shutil.copy(file_path, backup_path)
+    logging.info(f"[BACKUP] Создана резервная копия: {file_path} -> {backup_path}")
+
+def fix_rita_main():
+    if not os.path.isfile(MAIN_SCRIPT):
+        logging.error(f"[ERROR] Файл {MAIN_SCRIPT} не найден!")
+        return False
+
+    with open(MAIN_SCRIPT, encoding="utf-8") as f:
+        content = f.read()
+
+    # Проверка и добавление asyncio.run(main()) в конце
+    if "async def main" in content and "asyncio.run(main())" not in content:
+        backup_file(MAIN_SCRIPT)
+        with open(MAIN_SCRIPT, "a", encoding="utf-8") as f:
+            f.write("\n\nif __name__ == '__main__':\n    import asyncio\n    asyncio.run(main())\n")
+        logging.info("[FIX] Добавлен вызов asyncio.run(main()) в rita_main.py")
+    else:
+        logging.info("[INFO] rita_main.py уже содержит asyncio.run(main()) или нет async def main")
+
+    # Дополнительные исправления (по логам ошибок можно добавить тут)
+
+    return True
+
+def fix_check_bot_diagnostics():
+    if not os.path.isfile(CHECK_SCRIPT):
+        logging.error(f"[ERROR] Файл {CHECK_SCRIPT} не найден!")
+        return False
+
+    with open(CHECK_SCRIPT, encoding="utf-8") as f:
+        content = f.read()
+
+    # Пример исправления импорта telegram.ext — бывает ошибка SyntaxError из-за неправильного блока try/except
+    if "from telegram.ext import ContextTypes" in content:
+        # Проверим корректность блока try/except перед этим импортом (в логе была ошибка)
+        pattern = re.compile(r"(try:\s*from telegram\.ext import ContextTypes\s*except.*?:)", re.DOTALL)
+        if not pattern.search(content):
+            # Если нет блока try/except, просто оставим импорт без изменений или сделаем обычный импорт
+            backup_file(CHECK_SCRIPT)
+            content = content.replace(
+                "from telegram.ext import ContextTypes",
+                "# from telegram.ext import ContextTypes  # временно закомментирован импорт для предотвращения SyntaxError"
+            )
+            with open(CHECK_SCRIPT, "w", encoding="utf-8") as f:
+                f.write(content)
+            logging.info("[FIX] Исправлен импорт ContextTypes в check_bot_diagnostics.py")
+    else:
+        logging.info("[INFO] Импорт ContextTypes в check_bot_diagnostics.py корректен или отсутствует")
+
+    # Проверка и добавление asyncio.run(main()) в конце, если нужно
+    if "async def main" in content and "asyncio.run(main())" not in content:
+        backup_file(CHECK_SCRIPT)
+        with open(CHECK_SCRIPT, "a", encoding="utf-8") as f:
+            f.write("\n\nif __name__ == '__main__':\n    import asyncio\n    asyncio.run(main())\n")
+        logging.info("[FIX] Добавлен вызов asyncio.run(main()) в check_bot_diagnostics.py")
+    else:
+        logging.info("[INFO] check_bot_diagnostics.py уже содержит asyncio.run(main()) или нет async def main")
+
+    # Можно сюда добавить другие автоматические исправления из логов по необходимости
+
+    return True
+
+def git_push_fix():
+    # Попытка исправить ошибку git push из лога
+    try:
+        result = subprocess.run(["git", "status"], capture_output=True, text=True)
+        logging.info(f"[GIT] git status:\n{result.stdout}")
+
+        # Пробуем git add и git commit, если есть изменения
+        subprocess.run(["git", "add", "."], check=True)
+        subprocess.run(["git", "commit", "-m", "Auto fix before git push"], check=False)  # -m обязателен, но может не коммитить, если нет изменений
+        push_result = subprocess.run(["git", "push"], capture_output=True, text=True)
+
+        if push_result.returncode == 0:
+            logging.info("[GIT] git push успешно выполнен")
+        else:
+            logging.error(f"[GIT] Ошибка git push: {push_result.stderr}")
+
+    except Exception as e:
+        logging.error(f"[GIT] Ошибка при попытке git push: {e}")
+
+def main():
+    logging.info("=== Запуск автофикса скриптов Rita Mega Bot ===")
+
+    fixed_main = fix_rita_main()
+    fixed_check = fix_check_bot_diagnostics()
+
+    if fixed_main and fixed_check:
+        logging.info("Оба скрипта успешно проверены и исправлены по возможности.")
+    else:
+        logging.error("Возникли ошибки при исправлении скриптов.")
+
+    git_push_fix()
+
+    logging.info("=== Автофикс завершён ===")
+
+if __name__ == "__main__":
+    main()

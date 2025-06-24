@@ -1,0 +1,72 @@
+import os
+import sys
+import traceback
+
+# Пути к основным файлам - можно подкорректировать, если нужно
+LOG_FILE = 'check_bot_diagnostics.log'
+MAIN_SCRIPT = 'rita_main.py'
+CHECK_SCRIPT = 'check_bot_diagnostics.py'
+
+def check_file_exists(path):
+    if not os.path.isfile(path):
+        print(f"⚠️ Файл не найден: {path}")
+        return False
+    return True
+
+def fix_encoding_and_exceptions(script_path):
+    try:
+        # Читаем весь скрипт в utf-8 (если файл в другой кодировке — может упасть)
+        with open(script_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+    except UnicodeDecodeError:
+        # Если utf-8 не подходит, читаем как latin-1 и перекодируем
+        with open(script_path, 'r', encoding='latin-1') as f:
+            content = f.read()
+        lines = content.encode('latin-1').decode('utf-8', errors='ignore').splitlines(keepends=True)
+
+    fixed_lines = []
+    for line in lines:
+        # Исправим конструкции except, где нет переменной исключения
+        # Найдем строки с except Exception или просто except
+        if line.strip().startswith('except Exception:'):
+            # заменим на except Exception as e:
+            line = line.replace('except Exception:', 'except Exception as e:')
+        elif line.strip() == 'except:':
+            # заменим на except Exception as e:
+            line = line.replace('except:', 'except Exception as e:')
+        fixed_lines.append(line)
+
+    # Добавим в начале импорты для traceback, если их нет
+    imports_needed = ['import traceback\n']
+    if not any('traceback' in l for l in fixed_lines[:20]):
+        fixed_lines.insert(0, 'import traceback\n')
+
+    # Запишем обратно с utf-8
+    with open(script_path, 'w', encoding='utf-8') as f:
+        f.writelines(fixed_lines)
+
+    print(f"✅ Файл {script_path} успешно исправлен (кодировка + обработка исключений).")
+
+def main():
+    print("🔍 Проверяем наличие файлов...")
+    all_found = True
+    for path in [LOG_FILE, MAIN_SCRIPT, CHECK_SCRIPT]:
+        if not check_file_exists(path):
+            all_found = False
+
+    if not all_found:
+        print("❗ Исправь отсутствие файлов и запусти снова.")
+        return
+
+    print("✍️ Исправляем кодировку и обработку исключений в check_bot_diagnostics.py ...")
+    try:
+        fix_encoding_and_exceptions(CHECK_SCRIPT)
+    except Exception as e:
+        print("❌ Ошибка при исправлении скрипта:", e)
+        traceback.print_exc()
+        return
+
+    print("✅ Готово! Запусти check_bot_diagnostics.py снова.")
+
+if __name__ == '__main__':
+    main()
