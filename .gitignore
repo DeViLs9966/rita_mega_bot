@@ -7,3 +7,5 @@ __pycache__/
 keys.env
 .token_clean
 .chat_id
+keys.env
+.env
