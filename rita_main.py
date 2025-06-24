@@ -127,11 +127,11 @@ async def background_error_log_analysis():
 
 
 # === Ключи ===
-OPENAI_API_KEY  = ""
-HUGGINGFACE_API_KEY  = ""
-GOOGLE_API_KEY  = ""
-GOOGLE_CX  = ""
-TELEGRAM_BOT_TOKEN  = ""
+OPENAI_API_KEY   = ""
+HUGGINGFACE_API_KEY   = ""
+GOOGLE_API_KEY   = ""
+GOOGLE_CX   = ""
+TELEGRAM_BOT_TOKEN   = ""
 TELEGRAM_ADMIN_ID =  
 
 logging.basicConfig(
