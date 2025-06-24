@@ -1355,7 +1355,7 @@ def log_error(msg):
     logger.info(f"[ERROR] {msg}")
 
 # Ключ OpenAI
-OPENAI_API_KEY   = ""
+OPENAI_API_KEY    = ""
 
 # Пути к скриптам и логу
 MAIN_SCRIPT_PATH = Path("rita_main.py")
@@ -2279,7 +2279,7 @@ from telegram.ext import CommandHandler, ContextTypes, filters
 
 # Константы (укажи свои, если уже есть, тогда просто пропусти)
 AUTHORIZED_USERS = [ ]  # Твой Telegram ID
-TELEGRAM_BOT_TOKEN   = ""
+TELEGRAM_BOT_TOKEN    = ""
 
 logger = logging.getLogger(__name__)
 
@@ -2449,7 +2449,7 @@ from datetime import datetime
 from git import Repo, GitCommandError
 
 # --- ТВОИ ДАННЫЕ (замени здесь) ---
-TELEGRAM_BOT_TOKEN   = ""
+TELEGRAM_BOT_TOKEN    = ""
 TELEGRAM_CHAT_ID =    # твой Telegram ID
 
 LOG_FILE_PATH = "./rita_bot.log"  # путь к твоему лог файлу
@@ -2690,7 +2690,7 @@ LOG_FILE = "/mnt/data/rita_mega_bot/logs/rita_bot.log"  # путь к логу �
 MAIN_SCRIPT = "/mnt/data/rita_mega_bot/rita_main.py"    # путь к основному скрипту
 GIT_REPO_PATH = "/mnt/data/rita_mega_bot"               # путь к git-репозиторию с твоим ботом
 
-TELEGRAM_BOT_TOKEN   = ""  # твой реальный токен
+TELEGRAM_BOT_TOKEN    = ""  # твой реальный токен
 TELEGRAM_CHAT_ID =    # твой реальный ID (куда шлём уведомления)
 
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
@@ -2838,7 +2838,7 @@ from telegram.error import Conflict
 nest_asyncio.apply()
 
 # ✅ Реальный Telegram токен пользователя
-TELEGRAM_BOT_TOKEN   = ""
+TELEGRAM_BOT_TOKEN    = ""
 
 # Логгер
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
@@ -2891,7 +2891,7 @@ from telegram.ext import (
 from telegram.error import Conflict
 
 # --- ТВОИ НАСТРОЙКИ ---
-TELEGRAM_BOT_TOKEN   = ""
+TELEGRAM_BOT_TOKEN    = ""
 OWNER_ID =  
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
