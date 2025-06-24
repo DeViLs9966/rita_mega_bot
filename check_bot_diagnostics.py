@@ -1,3 +1,6 @@
+with open('.token_clean') as f:
+    cleaned_token = f.read().strip()
+
 import traceback
 
 
