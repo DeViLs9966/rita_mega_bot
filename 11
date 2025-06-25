@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+
+# Настройки
+GITIGNORE = ".gitignore"
+FILES_TO_REMOVE = ["keys.env", ".env", "replacements.txt"]
+SCRIPTS_TO_PATCH = ["rita_main.py", "check_bot_diagnostics.py"]  # Добавь сюда свои
+PLACEHOLDER_ENV_CONTENT = """\
+OPENAI_API_KEY=your_openai_key_here
+TELEGRAM_BOT_TOKEN=your_telegram_token_here
+HUGGINGFACE_TOKEN=your_huggingface_token_here
+GITHUB_PAT=your_github_pat_here
+"""
+
+def run(cmd, check=True, capture_output=False):
+    print(f"[CMD] {cmd}")
+    result = subprocess.run(cmd, shell=True, check=check, capture_output=capture_output, text=True)
+    if capture_output:
+        return result.stdout.strip()
+    return None
+
+def ensure_gitignore_entries():
+    if not os.path.exists(GITIGNORE):
+        with open(GITIGNORE, "w") as f:
+            pass
+    with open(GITIGNORE, "r") as f:
+        lines = f.read().splitlines()
+    changed = False
+    for file in FILES_TO_REMOVE:
+        if file not in lines:
+            lines.append(file)
+            changed = True
+    if changed:
+        with open(GITIGNORE, "w") as f:
+            f.write("\n".join(lines) + "\n")
+        print("[INFO] Обновлен .gitignore с ключевыми файлами.")
+
+def remove_files_from_git():
+    for file in FILES_TO_REMOVE:
+        if os.path.exists(file):
+            try:
+                run(f"git rm --cached {file}")
+            except subprocess.CalledProcessError:
+                print(f"[WARN] Файл {file} не найден в git, пропускаем.")
+        else:
+            print(f"[INFO] Файл {file} не существует, пропускаем.")
+
+def create_env_file():
+    if not os.path.exists(".env"):
+        with open(".env", "w") as f:
+            f.write(PLACEHOLDER_ENV_CONTENT)
+        print("[INFO] Создан примерный файл .env с плейсхолдерами ключей.")
+
+def install_dotenv():
+    try:
+        import dotenv
+        print("[INFO] python-dotenv уже установлен.")
+    except ImportError:
+        print("[INFO] Устанавливаю python-dotenv...")
+        run("pip install python-dotenv")
+
+def patch_scripts():
+    import re
+    # Пример патча: заменяем строки с ключами на чтение из os.getenv()
+    for script in SCRIPTS_TO_PATCH:
+        if not os.path.exists(script):
+            print(f"[WARN] Скрипт {script} не найден, пропускаем патч.")
+            continue
+        with open(script, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Пример: заменим строки типа OPENAI_API_KEY = "что-то" или 'что-то' на чтение из env
+        patterns = {
+            r'OPENAI_API_KEY\s*=\s*["\'].*?["\']': 'OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")',
+            r'TELEGRAM_BOT_TOKEN\s*=\s*["\'].*?["\']': 'TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")',
+            r'HUGGINGFACE_TOKEN\s*=\s*["\'].*?["\']': 'HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")',
+            r'GITHUB_PAT\s*=\s*["\'].*?["\']': 'GITHUB_PAT = os.getenv("GITHUB_PAT")',
+        }
+
+        # Добавим импорт в начало, если нет
+        if "from dotenv import load_dotenv" not in content:
+            content = "from dotenv import load_dotenv\nimport os\n\nload_dotenv()\n\n" + content
+
+        for pat, repl in patterns.items():
+            content, count = re.subn(pat, repl, content)
+            if count > 0:
+                print(f"[INFO] В скрипте {script} заменено {count} ключей по паттерну {pat}")
+
+        with open(script, "w", encoding="utf-8") as f:
+            f.write(content)
+
+def run_bfg():
+    if not os.path.exists("bfg.jar"):
+        print("[WARN] bfg.jar не найден, пропускаю очистку истории BFG.")
+        return
+    # Запускаем BFG для каждого файла
+    for f in FILES_TO_REMOVE:
+        print(f"[INFO] Запускаю BFG для удаления {f} из истории")
+        try:
+            run(f"java -jar bfg.jar --delete-files {f}")
+        except Exception as e:
+            print(f"[ERROR] BFG не смог обработать {f}: {e}")
+
+    # Очистка и оптимизация
+    run("git reflog expire --expire=now --all")
+    run("git gc --prune=now --aggressive")
+
+def git_push_force():
+    try:
+        run("git push origin main --force")
+        print("[INFO] Push выполнен успешно.")
+    except subprocess.CalledProcessError as e:
+        print(f"[ERROR] Ошибка при пуше: {e}")
+
+def main():
+    ensure_gitignore_entries()
+    remove_files_from_git()
+    create_env_file()
+    install_dotenv()
+    patch_scripts()
+    run_bfg()
+    git_push_force()
+    print("\n[Готово] Теперь: ")
+    print("- Проверь в .env свои ключи и токены")
+    print("- Запусти скрипты, они теперь берут ключи из окружения")
+    print("- Не коммить файлы с секретами!")
+
+if __name__ == "__main__":
+    main()

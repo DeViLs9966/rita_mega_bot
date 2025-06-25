@@ -36,6 +36,20 @@ from telegram import Bot
 bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Загружает переменные из .env в окружение
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
+GITHUB_PAT = os.getenv("GITHUB_PAT")
+
+
+
+
+
 import os
 import re
 import subprocess
@@ -72,7 +86,7 @@ subprocess.run(["python3", "fix_token_issue.py"])
 # === Загрузка переменных из .env ===
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "558079551"))  # по умолчанию твой ID
 
 if not TELEGRAM_BOT_TOKEN:
@@ -92,7 +106,7 @@ import os
 
 load_dotenv(dotenv_path="/data/data/com.termux/files/home/rita_mega_bot/.env")
 
-TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 
 from dotenv import load_dotenv
@@ -100,7 +114,7 @@ import os
 
 load_dotenv()  # Загружаем переменные из .env
 
-TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 print(f"[DEBUG] TELEGRAM_BOT_TOKEN: {TELEGRAM_BOT_TOKEN!r}")  # отладочный вывод
 
@@ -166,7 +180,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "558079551"))
 
 if not TELEGRAM_BOT_TOKEN:
@@ -699,7 +713,7 @@ def launch_rita_with_log():
 
 # --- Константы и ключи ---
 TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
-TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HF_API_KEY = os.getenv("HF_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -1343,7 +1357,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "558079551"))
 
 if not TELEGRAM_BOT_TOKEN:
@@ -1355,7 +1369,7 @@ bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 # Ключи и настройки (вставь свои реальные)
 import os
 
-TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HF_API_KEY = os.getenv("HF_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -1496,7 +1510,7 @@ def log_error(msg):
     logger.info(f"[ERROR] {msg}")
 
 # Ключ OpenAI
-OPENAI_API_KEY    = ""
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Пути к скриптам и логу
 MAIN_SCRIPT_PATH = Path("rita_main.py")
@@ -2420,7 +2434,7 @@ from telegram.ext import CommandHandler, ContextTypes, filters
 
 # Константы (укажи свои, если уже есть, тогда просто пропусти)
 AUTHORIZED_USERS = [ ]  # Твой Telegram ID
-TELEGRAM_BOT_TOKEN    = ""
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 logger = logging.getLogger(__name__)
 
@@ -2589,7 +2603,7 @@ from datetime import datetime
 from git import Repo, GitCommandError
 
 # --- ТВОИ ДАННЫЕ (замени здесь) ---
-TELEGRAM_BOT_TOKEN    = ""
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
 LOG_FILE_PATH = "./rita_bot.log"  # путь к твоему лог файлу
 MAIN_SCRIPT_PATH = "./rita_main.py"  # путь к основному скрипту
@@ -2833,7 +2847,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "558079551"))
 
 if not TELEGRAM_BOT_TOKEN:
@@ -2846,7 +2860,7 @@ LOG_FILE = "/mnt/data/rita_mega_bot/logs/rita_bot.log"  # путь к логу �
 MAIN_SCRIPT = "/mnt/data/rita_mega_bot/rita_main.py"    # путь к основному скрипту
 GIT_REPO_PATH = "/mnt/data/rita_mega_bot"               # путь к git-репозиторию с твоим ботом
 
-TELEGRAM_BOT_TOKEN    = ""  # твой реальный токен
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # твой реальный токен
 TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
 bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
@@ -2993,7 +3007,7 @@ from telegram.error import Conflict
 nest_asyncio.apply()
 
 # ✅ Реальный Telegram токен пользователя
-TELEGRAM_BOT_TOKEN    = ""
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 # Логгер
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
@@ -3046,7 +3060,7 @@ from telegram.ext import (
 from telegram.error import Conflict
 
 # --- ТВОИ НАСТРОЙКИ ---
-TELEGRAM_BOT_TOKEN    = ""
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

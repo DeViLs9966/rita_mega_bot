@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+import re
+import os
+import webbrowser
+
+# 🔍 Файл с последним сообщением об ошибке от GitHub при push
+GIT_LOG_FILE = ".last_push_error.log"
+
+# ✅ Если выполняется из скрипта 10 или 11 — GitHub ответ дублируется в переменной окружения
+GITHUB_REPO_URL = "https://github.com/DeViLs9966/rita_mega_bot"
+
+print("📦 [AutoUnblockPush] Анализирую журнал ошибки push...")
+
+if not os.path.exists(GIT_LOG_FILE):
+    print(f"❌ Файл {GIT_LOG_FILE} не найден. Пуш не блокировался или журнал не записан.")
+    print("💡 Сначала запусти git push и скопируй ошибку в .last_push_error.log")
+    exit(1)
+
+with open(GIT_LOG_FILE, "r", encoding="utf-8") as f:
+    log = f.read()
+
+# Ищем все URL для разблокировки
+urls = re.findall(r"https://github.com/.*/security/secret-scanning/unblock-secret/[a-zA-Z0-9]+", log)
+if not urls:
+    print("✅ Нет ссылок на блокированные секреты в push. Пуш должен работать.")
+    exit(0)
+
+print(f"🚨 Найдено {len(urls)} заблокированных секретов!\n")
+
+for idx, url in enumerate(urls, 1):
+    print(f"{idx}. 🔗 {url}")
+
+# Спрашиваем — открыть ссылки в браузере?
+answer = input("\n🌐 Хочешь открыть все ссылки в браузере? (y/n): ").strip().lower()
+if answer == 'y':
+    for url in urls:
+        print(f"📤 Открываю: {url}")
+        webbrowser.open(url)
+
+print("\n✅ После подтверждения всех секретов — сделай git push --force снова.")
+print("Пример:\n  git push origin main --force\n")
