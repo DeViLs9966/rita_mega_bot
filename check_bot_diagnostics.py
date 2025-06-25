@@ -302,6 +302,249 @@ if is_another_instance_running("rita_main.py"):
     logger.info ("[INFO] Другой экземпляр rita_main.py уже запущен. Выход.")
     sys.exit(0)
 
+
+
+
+
+
+
+
+
+
+
+
+import os
+import logging
+from dotenv import load_dotenv
+
+# Подключаем загрузку переменных из .env
+load_dotenv()
+
+# === Твои реальные токены из окружения ===
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+ADMIN_CHAT_ID = 558079551  # Твой ID
+
+# Проверяем переменные, если нет — падаем с ошибкой
+missing_vars = []
+if not TELEGRAM_BOT_TOKEN:
+    missing_vars.append("TELEGRAM_BOT_TOKEN")
+if not OPENAI_API_KEY:
+    missing_vars.append("OPENAI_API_KEY")
+if not HF_API_TOKEN:
+    missing_vars.append("HF_API_TOKEN")
+
+if missing_vars:
+    raise EnvironmentError(f"Отсутствуют обязательные переменные окружения: {', '.join(missing_vars)}")
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+logger.info(f"Telegram Token: {TELEGRAM_BOT_TOKEN[:10]}... (длина {len(TELEGRAM_BOT_TOKEN)})")
+logger.info(f"OpenAI Key: {OPENAI_API_KEY[:10]}... (длина {len(OPENAI_API_KEY)})")
+logger.info(f"HuggingFace Token: {HF_API_TOKEN[:10]}... (длина {len(HF_API_TOKEN)})")
+
+# Вот твой токен из лога (НЕ РЕКОМЕНДУЮ так хранить в коде, только для примера):
+print(f"Пример твоего TELEGRAM_BOT_TOKEN: 7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
+
+# Далее подключай ключи к своим библиотекам, например:
+# openai.api_key = OPENAI_API_KEY
+# bot = Bot(token=TELEGRAM_BOT_TOKEN)
+
+# ---------------------------------------
+# Пример .env файла (создай рядом с твоим скриптом):
+
+# TELEGRAM_BOT_TOKEN=7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4
+# OPENAI_API_KEY=твой_ключ_openai_без_кавычек
+# HF_API_TOKEN=твой_ключ_huggingface_без_кавычек
+
+
+
+
+from dotenv import load_dotenv
+load_dotenv()
+import asyncio
+import logging
+import os
+import sys
+from pathlib import Path
+
+import openai
+import requests
+from telegram import Update, Bot
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
+
+# ========== ЗАГРУЗКА КЛЮЧЕЙ ИЗ ОКРУЖЕНИЯ ================
+def get_env_key(key_name: str, required=True) -> str:
+    value = os.getenv(key_name)
+    if required and (value is None or value.strip() == ""):
+        logging.error(f"Required environment variable '{key_name}' is missing or empty.")
+        sys.exit(1)
+    return value
+
+
+TELEGRAM_BOT_TOKEN = get_env_key("TELEGRAM_BOT_TOKEN")
+OPENAI_API_KEY = get_env_key("OPENAI_API_KEY")
+HF_API_TOKEN = get_env_key("HF_API_TOKEN")
+ADMIN_CHAT_ID = int(get_env_key("ADMIN_CHAT_ID"))  # Ожидается целое число
+
+# ========== ЛОГИРОВАНИЕ ========================
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s | %(message)s",
+    level=logging.INFO,
+)
+logger = logging.getLogger(__name__)
+
+# ========== ИНИЦИАЛИЗАЦИЯ БОТА =================
+bot = Bot(token=TELEGRAM_BOT_TOKEN)
+
+# ========== НАСТРОЙКА OPENAI ===================
+openai.api_key = OPENAI_API_KEY
+
+# ========== РЕЖИМЫ РАБОТЫ =====================
+current_mode = "gpt4"  # по умолчанию
+
+MODES = {"gpt4", "gpt2", "gog", "ht"}
+
+
+async def send_telegram_notification(message: str):
+    """Отправить уведомление администратору."""
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        data = {
+            "chat_id": ADMIN_CHAT_ID,
+            "text": message,
+            "parse_mode": "Markdown",
+        }
+        resp = requests.post(url, data=data, timeout=10)
+        if not resp.ok:
+            logger.error(f"Telegram notification failed: {resp.text}")
+    except Exception as e:
+        logger.error(f"Telegram notification exception: {e}")
+
+
+async def call_openai_gpt4(prompt: str) -> str:
+    """Асинхронный вызов OpenAI GPT-4o-mini для генерации ответа."""
+    try:
+        response = await openai.ChatCompletion.acreate(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Ты - умный и дружелюбный помощник."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.5,
+            max_tokens=1000,
+            n=1,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error(f"OpenAI API error: {e}")
+        return "Ошибка при вызове OpenAI API."
+
+
+async def process_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global current_mode
+
+    text = update.message.text or ""
+    chat_id = update.message.chat_id
+
+    logger.info(f"Received message from {chat_id}: {text}")
+
+    # Команды переключения режимов
+    if text.lower().startswith("/gpt4"):
+        current_mode = "gpt4"
+        await update.message.reply_text("Режим переключен на GPT-4o-mini (OpenAI).")
+        return
+    elif text.lower().startswith("/gpt2"):
+        current_mode = "gpt2"
+        await update.message.reply_text("Режим переключен на GPT-2 (Hugging Face).")
+        return
+    elif text.lower().startswith("/gog"):
+        current_mode = "gog"
+        await update.message.reply_text("Режим переключен на Google поиск (заглушка).")
+        return
+    elif text.lower().startswith("/ht"):
+        current_mode = "ht"
+        await update.message.reply_text("Режим переключен на HuggingFace/DuckDuckGo поиск (заглушка).")
+        return
+    elif text.lower().startswith("/start"):
+        await update.message.reply_text(
+            "Привет! Я Rita AI Mega Bot.\n"
+            "Доступные команды: /gpt4, /gpt2, /gog, /ht\n"
+            "Пиши что угодно, и я отвечу в текущем режиме."
+        )
+        return
+
+    # Обработка сообщений по режимам
+    if current_mode == "gpt4":
+        reply = await call_openai_gpt4(text)
+        await update.message.reply_text(reply)
+    elif current_mode == "gpt2":
+        await update.message.reply_text("GPT-2 режим пока не реализован.")
+    elif current_mode == "gog":
+        await update.message.reply_text("Google поиск пока не реализован.")
+    elif current_mode == "ht":
+        await update.message.reply_text("HuggingFace/DuckDuckGo поиск пока не реализован.")
+    else:
+        await update.message.reply_text("Неизвестный режим. Используй /gpt4, /gpt2, /gog или /ht.")
+
+
+async def pro_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.chat_id != ADMIN_CHAT_ID:
+        await update.message.reply_text("У вас нет прав использовать эту команду.")
+        return
+    await update.message.reply_text("Привет, админ! Это команда /pro.")
+    # Здесь можно добавить автообновление или диагностику
+
+
+async def main():
+    application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+
+    application.add_handler(CommandHandler("start", process_message))
+    application.add_handler(CommandHandler("gpt4", process_message))
+    application.add_handler(CommandHandler("gpt2", process_message))
+    application.add_handler(CommandHandler("gog", process_message))
+    application.add_handler(CommandHandler("ht", process_message))
+    application.add_handler(CommandHandler("pro", pro_command))
+
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), process_message))
+
+    logger.info("Rita Mega Bot запущен!")
+
+    await application.run_polling()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         # Найдём начало блока запуска
 import re
 
