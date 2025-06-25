@@ -49,7 +49,7 @@ def fix_bot_token_usage(file_path):
 def inject_chat_id(file_path):
     code = Path(file_path).read_text()
     if "TELEGRAM_CHAT_ID" not in code:
-        code = "TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', 'REMOVED_OWNER_ID')\n" + code
+        code = "TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '558079551')\n" + code
         Path(file_path).write_text(code)
         logging.info(f"✅ Добавлен TELEGRAM_CHAT_ID в {file_path}")
 

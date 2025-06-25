@@ -588,7 +588,7 @@ def launch_rita_with_log():
 
 
 # --- Константы и ключи ---
-TELEGRAM_ADMIN_ID = REMOVED_OWNER_ID  # твой Telegram ID
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HF_API_KEY = os.getenv("HF_API_KEY")
@@ -1350,7 +1350,7 @@ async def handle_command_proverka(update, context: ContextTypes.DEFAULT_TYPE):
 import asyncio
 
 # Объявляем TELEGRAM_ADMIN_ID где-то глобально, например:
-TELEGRAM_ADMIN_ID = REMOVED_OWNER_ID  # твой Telegram ID
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID
 # Инициализация бота (уже должна быть в коде)
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 
@@ -2486,7 +2486,7 @@ async def self_improve_from_logs():
 
 from telegram.constants import ParseMode
 
-TELEGRAM_ADMIN_ID = REMOVED_OWNER_ID  # твой Telegram ID
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID
 async def send_admin_report(context):
     try:
     except Exception as e:
@@ -2523,7 +2523,7 @@ from git import Repo, GitCommandError
 
 # --- ТВОИ ДАННЫЕ (замени здесь) ---
 TELEGRAM_BOT_TOKEN    =   "TELEGRAM_BOT_TOKEN "
-TELEGRAM_ADMIN_ID = REMOVED_OWNER_ID  # твой Telegram ID
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID
 LOG_FILE_PATH = "./rita_bot.log"  # путь к твоему лог файлу
 MAIN_SCRIPT_PATH = "./rita_main.py"  # путь к основному скрипту
 REPO_PATH = "./"  # путь к репозиторию git (обычно корень проекта)
@@ -2770,7 +2770,7 @@ MAIN_SCRIPT = "/mnt/data/rita_mega_bot/rita_main.py"    # путь к основ
 GIT_REPO_PATH = "/mnt/data/rita_mega_bot"               # путь к git-репозиторию с твоим ботом
 
 TELEGRAM_BOT_TOKEN    = "TELEGRAM_BOT_TOKEN "  # твой реальный токен
-TELEGRAM_CHAT_ID = REMOVED_OWNER_ID   # твой реальный ID (куда шлём уведомления)
+TELEGRAM_CHAT_ID = 558079551   # твой реальный ID (куда шлём уведомления)
 
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 
@@ -2973,7 +2973,7 @@ from telegram.error import Conflict
 
 # --- ТВОИ НАСТРОЙКИ ---
 TELEGRAM_BOT_TOKEN    = "TELEGRAM_BOT_TOKEN "
-OWNER_ID =REMOVED_OWNER_ID
+OWNER_ID =558079551
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 

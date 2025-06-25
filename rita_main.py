@@ -1,5 +1,5 @@
-TELEGRAM_BOT_TOKEN = 'REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART'
-TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', 'REMOVED_OWNER_ID')
+TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '558079551')
 with open('.token_clean') as f:
     cleaned_token = f.read().strip()
 
@@ -927,3 +927,8 @@ import asyncio
         loop.run_until_complete(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
+
+import asyncio
+
+asyncio.run(main())

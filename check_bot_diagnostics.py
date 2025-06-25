@@ -33,7 +33,7 @@ def load_clean_token():
 TELEGRAM_BOT_TOKEN = load_clean_token()
 from telegram import Bot
 
-bot = Bot(token="REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART")
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 
 import os
@@ -54,7 +54,7 @@ from telegram import Bot
 with open(".token_clean", "r") as f:
     TELEGRAM_BOT_TOKEN = f.read().strip()
 
-bot = Bot(token="REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART")
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 
 print("Запускаем fix_token_issue.py для проверки и исправления токена...")
@@ -65,21 +65,21 @@ with open(".token_clean", "r") as f:
 
 from telegram import Bot
 
-bot = Bot(token="REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART")
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 
 subprocess.run(["python3", "fix_token_issue.py"])
 # === Загрузка переменных из .env ===
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = 'REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART'
-TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "REMOVED_OWNER_ID"))  # по умолчанию твой ID
+TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "558079551"))  # по умолчанию твой ID
 
 if not TELEGRAM_BOT_TOKEN:
     raise ValueError("❌ TELEGRAM_BOT_TOKEN не найден. Убедись, что он указан в .env")
 
 # === Создаём экземпляр бота ===
-bot = Bot(token="REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART")
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # === Пути к файлам ===
 LOG_FILE = "/mnt/data/rita_mega_bot/logs/rita_bot.log"
@@ -92,7 +92,7 @@ import os
 
 load_dotenv(dotenv_path="/data/data/com.termux/files/home/rita_mega_bot/.env")
 
-TELEGRAM_BOT_TOKEN = 'REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART'
+TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
 
 
 from dotenv import load_dotenv
@@ -100,7 +100,7 @@ import os
 
 load_dotenv()  # Загружаем переменные из .env
 
-TELEGRAM_BOT_TOKEN = 'REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART'
+TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
 
 print(f"[DEBUG] TELEGRAM_BOT_TOKEN: {TELEGRAM_BOT_TOKEN!r}")  # отладочный вывод
 
@@ -166,13 +166,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = 'REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART'
-TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "REMOVED_OWNER_ID"))
+TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "558079551"))
 
 if not TELEGRAM_BOT_TOKEN:
     raise ValueError("❌ TELEGRAM_BOT_TOKEN не найден. Убедись, что он указан в .env")
 
-bot = Bot(token="REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART")
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 import threading
 import asyncio
 import psutil
@@ -698,8 +698,8 @@ def launch_rita_with_log():
 
 
 # --- Константы и ключи ---
-TELEGRAM_ADMIN_ID = REMOVED_OWNER_ID  # твой Telegram ID, число без кавычек
-TELEGRAM_BOT_TOKEN = 'REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART'
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
+TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HF_API_KEY = os.getenv("HF_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -718,7 +718,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-bot = Bot(token="REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART")
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 import os
 import signal
@@ -1343,19 +1343,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = 'REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART'
-TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "REMOVED_OWNER_ID"))
+TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "558079551"))
 
 if not TELEGRAM_BOT_TOKEN:
     raise ValueError("❌ TELEGRAM_BOT_TOKEN не найден. Убедись, что он указан в .env")
 
-bot = Bot(token="REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART")
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 # # # from telegram.ext import ContextTypes  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError
 
 # Ключи и настройки (вставь свои реальные)
 import os
 
-TELEGRAM_BOT_TOKEN = 'REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART'
+TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HF_API_KEY = os.getenv("HF_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -1365,7 +1365,7 @@ OWNER_TELEGRAM_ID = int(os.getenv("OWNER_TELEGRAM_ID", 0))
 MAIN_SCRIPT_PATH = Path("./rita_main.py")
 HELPER_SCRIPT_PATH = Path("./check_bot_diagnostics.py")
 
-bot = Bot(token="REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART")
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # === Лог-функции из блока 1 ===
 def log_info(msg):
@@ -1452,9 +1452,9 @@ async def handle_command_proverka(update, context: ContextTypes.DEFAULT_TYPE):
 import asyncio
 
 # Объявляем TELEGRAM_ADMIN_ID где-то глобально, например:
-TELEGRAM_ADMIN_ID = REMOVED_OWNER_ID  # твой Telegram ID, число без кавычек
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
 # Инициализация бота (уже должна быть в коде)
-bot = Bot(token="REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART")
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # Асинхронная функция для отправки сообщения админу
 async def send_admin_message(text: str):
@@ -2554,7 +2554,7 @@ async def self_improve_from_logs():
 
 from telegram.constants import ParseMode
 
-TELEGRAM_ADMIN_ID = REMOVED_OWNER_ID  # твой Telegram ID, число без кавычек
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
 async def send_admin_report(context):
     try:
         logs = ""
@@ -2590,7 +2590,7 @@ from git import Repo, GitCommandError
 
 # --- ТВОИ ДАННЫЕ (замени здесь) ---
 TELEGRAM_BOT_TOKEN    = ""
-TELEGRAM_ADMIN_ID = REMOVED_OWNER_ID  # твой Telegram ID, число без кавычек
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
 LOG_FILE_PATH = "./rita_bot.log"  # путь к твоему лог файлу
 MAIN_SCRIPT_PATH = "./rita_main.py"  # путь к основному скрипту
 REPO_PATH = "./"  # путь к репозиторию git (обычно корень проекта)
@@ -2833,13 +2833,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = 'REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART'
-TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "REMOVED_OWNER_ID"))
+TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "558079551"))
 
 if not TELEGRAM_BOT_TOKEN:
     raise ValueError("❌ TELEGRAM_BOT_TOKEN не найден. Убедись, что он указан в .env")
 
-bot = Bot(token="REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART")
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # === Настройки под тебя — замени на свои реальные данные ===
 LOG_FILE = "/mnt/data/rita_mega_bot/logs/rita_bot.log"  # путь к логу твоего основного бота (проверь точный)
@@ -2847,8 +2847,8 @@ MAIN_SCRIPT = "/mnt/data/rita_mega_bot/rita_main.py"    # путь к основ
 GIT_REPO_PATH = "/mnt/data/rita_mega_bot"               # путь к git-репозиторию с твоим ботом
 
 TELEGRAM_BOT_TOKEN    = ""  # твой реальный токен
-TELEGRAM_ADMIN_ID = REMOVED_OWNER_ID  # твой Telegram ID, число без кавычек
-bot = Bot(token="REMOVED_TELEGRAM_TOKEN_PART:REMOVED_TELEGRAM_TOKEN_PART")
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # Функция для отправки сообщения в телеграм
 async def send_telegram_message(text: str):
@@ -3047,7 +3047,7 @@ from telegram.error import Conflict
 
 # --- ТВОИ НАСТРОЙКИ ---
 TELEGRAM_BOT_TOKEN    = ""
-TELEGRAM_ADMIN_ID = REMOVED_OWNER_ID  # твой Telegram ID, число без кавычек
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
