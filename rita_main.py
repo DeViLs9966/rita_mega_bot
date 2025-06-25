@@ -1,3 +1,4 @@
+TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
 from dotenv import load_dotenv
 import os
 

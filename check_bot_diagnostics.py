@@ -1,3 +1,4 @@
+TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
 with open('.token_clean') as f:
     cleaned_token = f.read().strip()
 
