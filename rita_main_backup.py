@@ -4,7 +4,7 @@ import os
 
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = "7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '558079551')
 with open('.token_clean') as f:
     cleaned_token = f.read().strip()
@@ -142,7 +142,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HUGGINGFACE_API_KEY    = ""
 GOOGLE_API_KEY    = ""
 GOOGLE_CX    = ""
-TELEGRAM_BOT_TOKEN = "7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_ADMIN_ID =  
 
 logging.basicConfig(
@@ -937,8 +937,4 @@ import asyncio
 
 import asyncio
 
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(main())
-    except (KeyboardInterrupt, SystemExit):
-        pass
+asyncio.run(main())

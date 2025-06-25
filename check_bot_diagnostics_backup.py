@@ -1,8 +1,126 @@
+TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+with open('.token_clean') as f:
+    cleaned_token = f.read().strip()
+
 import traceback
 
 
 
 # check_bot_diagnostics.py — БЛОК 1 из 6
+
+
+import os
+
+TOKEN_FILE = ".token_clean"
+
+def load_clean_token():
+    if os.path.exists(TOKEN_FILE):
+        with open(TOKEN_FILE, "r") as f:
+            token = f.read().strip()
+            print(f"[DEBUG] Загружен токен из {TOKEN_FILE}: {repr(token)}")
+            return token
+    else:
+        # Если файла нет, читаем из .env
+        from dotenv import load_dotenv
+        load_dotenv()
+        raw_token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+        print(f"[DEBUG] Загружен токен из .env: {repr(raw_token)}")
+
+        # Запишем в .token_clean для следующего запуска
+        with open(TOKEN_FILE, "w") as f:
+            f.write(raw_token)
+        return raw_token
+
+TELEGRAM_BOT_TOKEN = load_clean_token()
+from telegram import Bot
+
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
+
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Загружает переменные из .env в окружение
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
+GITHUB_PAT = os.getenv("GITHUB_PAT")
+
+
+
+
+
+import os
+import re
+import subprocess
+import aiohttp
+import asyncio
+from telegram import Bot
+from dotenv import load_dotenv
+from telegram import Bot
+import subprocess
+
+import subprocess
+
+from telegram import Bot
+
+# Читаем токен из файла .token_clean
+with open(".token_clean", "r") as f:
+    TELEGRAM_BOT_TOKEN = f.read().strip()
+
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
+
+
+print("Запускаем fix_token_issue.py для проверки и исправления токена...")
+subprocess.run(["python3", "fix_token_issue.py"], check=True)
+
+with open(".token_clean", "r") as f:
+    TELEGRAM_BOT_TOKEN = f.read().strip()
+
+from telegram import Bot
+
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
+
+
+subprocess.run(["python3", "fix_token_issue.py"])
+# === Загрузка переменных из .env ===
+load_dotenv()
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "558079551"))  # по умолчанию твой ID
+
+if not TELEGRAM_BOT_TOKEN:
+    raise ValueError("❌ TELEGRAM_BOT_TOKEN не найден. Убедись, что он указан в .env")
+
+# === Создаём экземпляр бота ===
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
+
+# === Пути к файлам ===
+LOG_FILE = "/mnt/data/rita_mega_bot/logs/rita_bot.log"
+MAIN_SCRIPT = "/mnt/data/rita_mega_bot/rita_main.py"
+GIT_REPO_PATH = "/mnt/data/rita_mega_bot"
+
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv(dotenv_path="/data/data/com.termux/files/home/rita_mega_bot/.env")
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Загружаем переменные из .env
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+print(f"[DEBUG] TELEGRAM_BOT_TOKEN: {TELEGRAM_BOT_TOKEN!r}")  # отладочный вывод
+
+
+
 
 import asyncio
 import logging
@@ -52,7 +170,24 @@ import logging
 import requests
 from pathlib import Path
 import hashlib
+
+import os
+import re
+import subprocess
+import aiohttp
+import asyncio
 from telegram import Bot
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "558079551"))
+
+if not TELEGRAM_BOT_TOKEN:
+    raise ValueError("❌ TELEGRAM_BOT_TOKEN не найден. Убедись, что он указан в .env")
+
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 import threading
 import asyncio
 import psutil
@@ -102,7 +237,13 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_TOKEN = " "
+from aiogram import Bot, Dispatcher
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -120,8 +261,7 @@ import asyncio
 
 def read_logs():
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        with open("rita_bot.log", "r", encoding="utf-8") as f:
+        with open("rita_bot.log", "r", encoding="utf-8") as f:
             logs = f.read()
         logger.info("Логи успешно прочитаны.")
         return logs
@@ -133,8 +273,7 @@ def is_another_check_diag_running():
     count = 0
     for proc in psutil.process_iter(['cmdline']):
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            cmd = proc.info['cmdline']
+            cmd = proc.info['cmdline']
             if cmd and 'check_bot_diagnostics.py' in ' '.join(cmd):
                 count += 1
         except Exception as e:
@@ -145,8 +284,7 @@ def is_another_instance_running(script_name):
     count = 0
     for proc in psutil.process_iter(['cmdline']):
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            cmd = proc.info['cmdline']
+            cmd = proc.info['cmdline']
             if cmd and script_name in ' '.join(cmd):
                 count += 1
         except Exception as e:
@@ -169,8 +307,7 @@ import re
 
 def fix_asyncio_run_block(filepath="rita_main.py"):
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
 
         fixed_block = '''
@@ -181,8 +318,7 @@ if __name__ == "__main__":
     nest_asyncio.apply()
 
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        asyncio.run(main())
+        asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logger.info ("[❌] Завершение работы по Ctrl+C или команде завершения.")
     except RuntimeError as e:
@@ -228,8 +364,7 @@ def log_error(msg):
 def kill_existing_rita_bot():
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            if proc.info['cmdline'] and "rita_main.py" in " ".join(proc.info['cmdline']) and proc.pid != os.getpid():
+            if proc.info['cmdline'] and "rita_main.py" in " ".join(proc.info['cmdline']) and proc.pid != os.getpid():
                 log_info(f"Завершаю дубликат процесса {proc.pid} (rita_main.py)")
                 proc.kill()
         except (psutil.NoSuchProcess, psutil.AccessDenied):
@@ -239,8 +374,7 @@ def safe_restart_rita_main():
     kill_existing_rita_bot()
     time.sleep(2)
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        proc = subprocess.Popen(["python3", "rita_main.py"])
+        proc = subprocess.Popen(["python3", "rita_main.py"])
         log_info(f"rita_main.py запущен с PID {proc.pid}")
     except Exception as e:
         log_error(f"Ошибка запуска rita_main.py: {e}")
@@ -261,8 +395,7 @@ async def auto_fix_from_logs():
     log_info("[INFO] Запуск автоанализа логов...")
 
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        # Обязательно оборачиваем в Path, чтобы избежать ошибок 'str' object has no attribute 'exists'
+        # Обязательно оборачиваем в Path, чтобы избежать ошибок 'str' object has no attribute 'exists'
         rita_main_path = Path("rita_main.py")
         rita_log_path = Path("rita_main.log")
 
@@ -278,16 +411,14 @@ async def auto_fix_from_logs():
 
 async def main():
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        await analyze_and_fix_script(Path(rita_main_path), Path(log_path))
+        await analyze_and_fix_script(Path(rita_main_path), Path(log_path))
     except Exception as e:
         logger.error(f"[ERROR] analyze_and_fix_script: {e}")
 
 async def openai_fix_code(prompt: str) -> str:
     openai.api_key = OPENAI_API_KEY
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        response = await openai.ChatCompletion.acreate(
+        response = await openai.ChatCompletion.acreate(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "Ты — помощник программиста."},
@@ -307,8 +438,7 @@ import requests
 
 def send_telegram_notification(message: str):
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
         data = {
             "chat_id": ADMIN_CHAT_ID,
             "text": message,
@@ -357,8 +487,7 @@ async def auto_fix_loop(logger=None, interval_minutes: int = 5):
             print("⏳ [Автофиксер] Запуск автоанализа и исправлений...")
 
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            main_updated = await analyze_and_fix_script(MAIN_SCRIPT_PATH, LOG_FILE_PATH)
+            main_updated = await analyze_and_fix_script(MAIN_SCRIPT_PATH, LOG_FILE_PATH)
             helper_updated = await analyze_and_fix_script(HELPER_SCRIPT_PATH, LOG_FILE_PATH)
 
             if main_updated:
@@ -409,8 +538,7 @@ async def generate_improvements(script_code: str, script_name: str) -> str:
         f"{script_code}"
     )
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        openai.api_key = OPENAI_API_KEY
+        openai.api_key = OPENAI_API_KEY
         response = await openai.ChatCompletion.acreate(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
@@ -441,8 +569,7 @@ async def generate_fix_patch(error_log_snippet: str, file_content: str) -> str:
         "Верни исправленный полный код без объяснений."
     )
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        openai.api_key = OPENAI_API_KEY
+        openai.api_key = OPENAI_API_KEY
         response = await openai.ChatCompletion.acreate(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
@@ -507,8 +634,7 @@ def kill_processes_by_script_name(script_name: str):
     Завершает все процессы python, в которых в командной строке есть script_name.
     """
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        for proc in psutil.process_iter(['pid', 'cmdline']):
+        for proc in psutil.process_iter(['pid', 'cmdline']):
             if proc.info['cmdline'] and script_name in " ".join(proc.info['cmdline']):
                 log_info(f"Завершаем процесс PID {proc.pid} для {script_name}")
                 proc.terminate()
@@ -530,8 +656,7 @@ def kill_processes_by_script_name(script_name: str):
 
 def fix_rita_main_asyncio_run():
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        with open("rita_main.py", "r", encoding="utf-8") as f:
+        with open("rita_main.py", "r", encoding="utf-8") as f:
             lines = f.readlines()
 
         changed = False
@@ -588,7 +713,7 @@ def launch_rita_with_log():
 
 
 # --- Константы и ключи ---
-TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HF_API_KEY = os.getenv("HF_API_KEY")
@@ -608,7 +733,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 import os
 import signal
@@ -626,8 +751,7 @@ def kill_duplicate_rita_bots():
 
     for proc in psutil.process_iter(attrs=['pid', 'name', 'cmdline']):
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            pid = proc.info['pid']
+            pid = proc.info['pid']
             cmdline = proc.info['cmdline']
 
             if pid == current_pid:
@@ -694,8 +818,7 @@ def log_debug(msg):
 def log_info(msg):
     logger.info(f"[INFO] {time.ctime()} - {msg}")
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        with open(LOG_FILE, "a", encoding="utf-8") as f:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
             f.write(f"[INFO] {time.ctime()} - {msg}\n")
     except Exception as e:
         pass
@@ -703,8 +826,7 @@ def log_info(msg):
 def log_error(msg):
     logger.info(f"[ERROR] {time.ctime()} - {msg}")
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        with open(LOG_FILE, "a", encoding="utf-8") as f:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
             f.write(f"[ERROR] {time.ctime()} - {msg}\n")
     except Exception as e:
         pass
@@ -712,8 +834,7 @@ def log_error(msg):
 # --- Автообновление скрипта ---
 def auto_update_script(script_path: Path, repo_raw_url: str) -> bool:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        log_info(f"Попытка автообновления: {script_path.name}")
+        log_info(f"Попытка автообновления: {script_path.name}")
         raw_url = f"{repo_raw_url}/{script_path.name}"
 
         response = requests.get(raw_url, timeout=15)
@@ -740,8 +861,7 @@ import requests
 
 def check_internet() -> bool:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        socket.create_connection(("8.8.8.8", 53), timeout=5)
+        socket.create_connection(("8.8.8.8", 53), timeout=5)
         log_info("Интернет доступен")
         return True
     except Exception as e:
@@ -749,8 +869,7 @@ def check_internet() -> bool:
         return False
 def check_openai_api() -> bool:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        import openai
+        import openai
         openai.api_key = OPENAI_API_KEY
         openai.Model.list()
         log_info("OpenAI API доступен")
@@ -761,8 +880,7 @@ def check_openai_api() -> bool:
 
 def check_hf_api() -> bool:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+        headers = {"Authorization": f"Bearer {HF_API_KEY}"}
         r = requests.get("https://api-inference.huggingface.co/models", headers=headers, timeout=10)
         if r.status_code == 200:
             log_info("HuggingFace API доступен")
@@ -777,8 +895,7 @@ def check_hf_api() -> bool:
 def check_google_search_api() -> bool:
     url = f"https://www.googleapis.com/customsearch/v1?key={GOOGLE_API_KEY}&cx={GOOGLE_CSE_ID}&q=test"
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        r = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=10)
         if r.status_code == 200:
             log_info("Google Custom Search API доступен")
             return True
@@ -792,8 +909,7 @@ def check_google_search_api() -> bool:
 # --- Функция для подсчёта sha256 хеша файла ---
 def calculate_hash(file_path: Path) -> str:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        hasher = hashlib.sha256()
+        hasher = hashlib.sha256()
         with open(file_path, 'rb') as f:
             while chunk := f.read(8192):
                 hasher.update(chunk)
@@ -804,7 +920,7 @@ def calculate_hash(file_path: Path) -> str:
 
 
 from telegram import Update
-# # # # from telegram.ext import ContextTypes  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError
+# # # from telegram.ext import ContextTypes  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError
 
 async def cmd_update_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_TELEGRAM_ID:
@@ -837,8 +953,7 @@ async def cmd_update_self(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # — Отправка Telegram-сообщения —
 async def send_telegram_message(text: str):
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        await bot.send_message(chat_id=TELEGRAM_ADMIN_ID, text=text)
+        await bot.send_message(chat_id=TELEGRAM_ADMIN_ID, text=text)
         log_info(f"Отправлено в Telegram: {text}")
     except Exception as e:
         log_error(f"Ошибка при отправке в Telegram: {e}")
@@ -846,8 +961,7 @@ async def send_telegram_message(text: str):
 # — Проверки подключения —
 def check_internet(timeout=5) -> bool:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        response = requests.get("https://www.google.com", timeout=timeout)
+        response = requests.get("https://www.google.com", timeout=timeout)
         log_debug("Интернет доступен")
         return response.status_code == 200
     except requests.RequestException:
@@ -858,8 +972,7 @@ def check_openai_api() -> bool:
     import openai
     openai.api_key = OPENAI_API_KEY
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        response = openai.Model.list()
+        response = openai.Model.list()
         log_debug(f"OpenAI API доступен, моделей: {len(response.data)}")
         return True
     except Exception as e:
@@ -869,8 +982,7 @@ def check_openai_api() -> bool:
 def check_hf_api() -> bool:
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        r = requests.get("https://api-inference.huggingface.co/models", headers=headers, timeout=10)
+        r = requests.get("https://api-inference.huggingface.co/models", headers=headers, timeout=10)
         if r.status_code == 200:
             log_debug("HuggingFace API доступен")
             return True
@@ -884,8 +996,7 @@ def check_hf_api() -> bool:
 def check_google_search_api() -> bool:
     url = f"https://www.googleapis.com/customsearch/v1?key={GOOGLE_API_KEY}&cx={GOOGLE_CSE_ID}&q=test"
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        r = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=10)
         if r.status_code == 200:
             log_debug("Google Custom Search API доступен")
             return True
@@ -899,8 +1010,7 @@ def check_google_search_api() -> bool:
 # — Автообновление скрипта (по raw ссылке GitHub) —
 def auto_update_script(script_path: Path, repo_url: str):
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        log_info(f"Попытка автообновления: {script_path.name}")
+        log_info(f"Попытка автообновления: {script_path.name}")
         if shutil.which("git") is not None:
             script_dir = script_path.parent
             if (script_dir / ".git").exists():
@@ -954,8 +1064,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_pro(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        cpu_count = psutil.cpu_count()
+        cpu_count = psutil.cpu_count()
         cpu_freq = psutil.cpu_freq()
         ram = psutil.virtual_memory()
         disk = psutil.disk_usage('/')
@@ -1028,8 +1137,7 @@ async def cmd_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def calculate_hash(path: Path) -> str:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        content = path.read_bytes()
+        content = path.read_bytes()
         return hashlib.sha256(content).hexdigest()
     except Exception as e:
         log_error(f"Ошибка хэша {path.name}: {e}")
@@ -1083,8 +1191,7 @@ async def auto_fix_and_restart_if_needed():
             if updated:
                 log_info("rita_main.py обновлен, перезапуск...")
                 try:
-    except Exception as e:
-        print(f'AutoFix: {e}')                    subprocess.Popen([sys.executable, str(MAIN_SCRIPT_PATH)])
+                    subprocess.Popen([sys.executable, str(MAIN_SCRIPT_PATH)])
                     log_info("rita_main.py успешно запущен")
                 except Exception as e:
                     log_error(f"Ошибка при перезапуске rita_main.py: {e}")
@@ -1108,8 +1215,7 @@ async def auto_fix_and_restart_if_needed():
                 log_info("rita_main.py обновлен, перезапуск...")
                 # Перезапускаем основной скрипт
                 try:
-    except Exception as e:
-        print(f'AutoFix: {e}')                    subprocess.Popen([sys.executable, str(MAIN_SCRIPT_PATH)])
+                    subprocess.Popen([sys.executable, str(MAIN_SCRIPT_PATH)])
                     log_info("rita_main.py перезапущен успешно")
                 except Exception as e:
                     log_error(f"Ошибка при перезапуске rita_main.py: {e}")
@@ -1158,8 +1264,7 @@ def log_error(msg):
 # --- Проверка подключения к интернету ---
 def check_internet(url='https://www.google.com') -> bool:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        r = requests.get(url, timeout=5)
+        r = requests.get(url, timeout=5)
         log_debug("Проверка интернета выполнена успешно")
         return r.status_code == 200
     except Exception as e:
@@ -1171,8 +1276,7 @@ def check_openai_api() -> bool:
     import openai
     openai.api_key = OPENAI_API_KEY
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        response = openai.Model.list()
+        response = openai.Model.list()
         log_debug(f"OpenAI API доступен, моделей: {len(response.data)}")
         return True
     except Exception as e:
@@ -1183,8 +1287,7 @@ def check_openai_api() -> bool:
 def check_hf_api() -> bool:
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        r = requests.get("https://api-inference.huggingface.co/models", headers=headers, timeout=10)
+        r = requests.get("https://api-inference.huggingface.co/models", headers=headers, timeout=10)
         if r.status_code == 200:
             log_debug("HuggingFace API доступен")
             return True
@@ -1198,8 +1301,7 @@ def check_hf_api() -> bool:
 # --- Проверка Google Search API ---1
 def check_google_search_api():
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        params = {
+        params = {
             "key": GOOGLE_API_KEY,
             "cx": GOOGLE_CX,
             "q": "test"
@@ -1218,8 +1320,7 @@ def check_google_search_api():
 # --- Обновление скрипта из GitHub ---
 def auto_update_script(script_path, repo_url):
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        filename = script_path.name
+        filename = script_path.name
         raw_url = f"{repo_url}/{filename}"
         log_info(f"Получение кода из {raw_url}")
         response = requests.get(raw_url, timeout=15)
@@ -1246,8 +1347,25 @@ import threading
 import hashlib
 import time
 from pathlib import Path
+
+import os
+import re
+import subprocess
+import aiohttp
+import asyncio
 from telegram import Bot
-# # # # from telegram.ext import ContextTypes  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "558079551"))
+
+if not TELEGRAM_BOT_TOKEN:
+    raise ValueError("❌ TELEGRAM_BOT_TOKEN не найден. Убедись, что он указан в .env")
+
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
+# # # from telegram.ext import ContextTypes  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError  # временно закомментирован импорт для предотвращения SyntaxError
 
 # Ключи и настройки (вставь свои реальные)
 import os
@@ -1262,7 +1380,7 @@ OWNER_TELEGRAM_ID = int(os.getenv("OWNER_TELEGRAM_ID", 0))
 MAIN_SCRIPT_PATH = Path("./rita_main.py")
 HELPER_SCRIPT_PATH = Path("./check_bot_diagnostics.py")
 
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # === Лог-функции из блока 1 ===
 def log_info(msg):
@@ -1274,8 +1392,7 @@ def log_error(msg):
 # Функция хеширования файла (для проверки целостности)
 def calculate_hash(file_path: Path) -> str:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        hasher = hashlib.sha256()
+        hasher = hashlib.sha256()
         with open(file_path, 'rb') as f:
             while chunk := f.read(8192):
                 hasher.update(chunk)
@@ -1350,15 +1467,14 @@ async def handle_command_proverka(update, context: ContextTypes.DEFAULT_TYPE):
 import asyncio
 
 # Объявляем TELEGRAM_ADMIN_ID где-то глобально, например:
-TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
 # Инициализация бота (уже должна быть в коде)
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # Асинхронная функция для отправки сообщения админу
 async def send_admin_message(text: str):
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        await bot.send_message(chat_id=TELEGRAM_ADMIN_ID, text=text)
+        await bot.send_message(chat_id=TELEGRAM_ADMIN_ID, text=text)
         logger.info(f"Отправлено сообщение админу: {text}")
     except Exception as e:
         logger.error(f"Ошибка отправки сообщения админу: {e}")
@@ -1395,7 +1511,7 @@ def log_error(msg):
     logger.info(f"[ERROR] {msg}")
 
 # Ключ OpenAI
-OPENAI_API_KEY    = ""
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Пути к скриптам и логу
 MAIN_SCRIPT_PATH = Path("rita_main.py")
@@ -1415,8 +1531,7 @@ async def generate_fix_patch(error_log_snippet: str, file_content: str) -> str:
         "Верни исправленный полный код без объяснений."
     )
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        openai.api_key = OPENAI_API_KEY
+        openai.api_key = OPENAI_API_KEY
         response = await openai.ChatCompletion.acreate(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
@@ -1442,8 +1557,7 @@ def monitor_main_script(interval=60):
             main_running = False
             for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
                 try:
-    except Exception as e:
-        print(f'AutoFix: {e}')                    if "rita_main.py" in " ".join(proc.info['cmdline']):
+                    if "rita_main.py" in " ".join(proc.info['cmdline']):
                         main_running = True
                         break
                 except Exception as e:
@@ -1452,8 +1566,7 @@ def monitor_main_script(interval=60):
             if not main_running:
                 log_error("Основной скрипт rita_main.py не найден. Перезапускаем...")
                 try:
-    except Exception as e:
-        print(f'AutoFix: {e}')                    subprocess.Popen([sys.executable, str(MAIN_SCRIPT_PATH)])
+                    subprocess.Popen([sys.executable, str(MAIN_SCRIPT_PATH)])
                     send_admin_message_sync("⚠️ rita_main.py был автоматически перезапущен (не обнаружен в процессе).")
                 except Exception as e:
                     log_error(f"Не удалось перезапустить rita_main.py: {e}")
@@ -1474,8 +1587,7 @@ async def run_self_improvement_cycle():
     - Отправляет отчеты администратору.
     """
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        error_report = analyze_errors_for_self_learning()  # должна быть функция из твоего кода
+        error_report = analyze_errors_for_self_learning()  # должна быть функция из твоего кода
         await send_admin_message(error_report)            # должна быть асинхронная функция отправки в Telegram
 
         repo_raw_url = "https://raw.githubusercontent.com/DeViLs9966/rita_mega_bot/main"
@@ -1522,8 +1634,7 @@ def analyze_errors_for_self_learning() -> str:
         return "Лог файл не найден для анализа."
 
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        with open(LOG_FILE, "r", encoding="utf-8") as f:
+        with open(LOG_FILE, "r", encoding="utf-8") as f:
             lines = f.readlines()
         error_lines = [line for line in lines if "[ERROR]" in line]
         recent_errors = error_lines[-100:]
@@ -1548,8 +1659,7 @@ def analyze_errors_for_self_learning() -> str:
 # --- Обновление скрипта с GitHub ---
 def auto_update_script(script_path: Path, repo_raw_url: str) -> bool:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        log_info(f"Попытка автообновления: {script_path.name}")
+        log_info(f"Попытка автообновления: {script_path.name}")
 
         # Проверка, есть ли git и репозиторий
         if shutil.which("git") is not None:
@@ -1589,8 +1699,7 @@ def auto_update_script(script_path: Path, repo_raw_url: str) -> bool:
 # --- Перезапуск основного скрипта ---
 async def restart_main_script():
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        logger.info("🔁 Перезапуск основного скрипта rita_main.py")
+        logger.info("🔁 Перезапуск основного скрипта rita_main.py")
         process = await asyncio.create_subprocess_exec(sys.executable, str(MAIN_SCRIPT_PATH))
         await send_admin_message("rita_main.py был автоматически перезапущен.")
     except Exception as e:
@@ -1599,8 +1708,7 @@ async def restart_main_script():
 # --- Получение версии скрипта (если указана в начале файла) ---
 def get_script_version(script_path: Path) -> str:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        with open(script_path, "r", encoding="utf-8") as f:
+        with open(script_path, "r", encoding="utf-8") as f:
             first_line = f.readline()
         if first_line.startswith("# Version:"):
             return first_line.strip().split(":")[1].strip()
@@ -1611,8 +1719,7 @@ def get_script_version(script_path: Path) -> str:
 async def background_error_log_analysis():
     while True:
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            # Путь к логу, замени при необходимости
+            # Путь к логу, замени при необходимости
             log_file = "rita_bot.log"
             with open(log_file, "r", encoding="utf-8") as f:
                 log_text = f.read()
@@ -1631,8 +1738,7 @@ async def background_error_log_analysis():
 # --- Полный цикл самообучения и автообновления ---
 async def run_self_improvement_cycle():
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        error_report = analyze_errors_for_self_learning()
+        error_report = analyze_errors_for_self_learning()
         await send_admin_message(error_report)
 
         repo_raw_url = "https://github.com/DeViLs9966/rita_mega_bot"
@@ -1652,8 +1758,7 @@ async def run_self_improvement_cycle():
 # --- Проверки доступа к API и интернету ---
 def check_openai_api() -> bool:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        import openai
+        import openai
         openai.api_key = OPENAI_API_KEY
         openai.Model.list()
         return True
@@ -1662,8 +1767,7 @@ def check_openai_api() -> bool:
         return False
 def check_hf_api() -> bool:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        headers = {
+        headers = {
             "Authorization": f"Bearer {HF_API_KEY}"
         }
         r = requests.get("https://api-inference.huggingface.co/models", headers=headers, timeout=10)
@@ -1675,8 +1779,7 @@ def check_hf_api() -> bool:
 def check_google_search_api() -> bool:
     url = f"https://www.googleapis.com/customsearch/v1?key={GOOGLE_API_KEY}&cx={GOOGLE_CSE_ID}&q=test"
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        r = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=10)
         if r.status_code == 200:
             log_debug("Google Custom Search API доступен")
             return True
@@ -1689,8 +1792,7 @@ def check_google_search_api() -> bool:
 
 def check_internet() -> bool:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        socket.create_connection(("8.8.8.8", 53), timeout=5)
+        socket.create_connection(("8.8.8.8", 53), timeout=5)
         return True
     except Exception as e:
         log_error(f"Ошибка соединения с интернетом: {e}")
@@ -1738,8 +1840,7 @@ async def cmd_proverka(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def periodic_self_improve():
     while True:
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            await run_self_improvement_cycle()  # <- Добавляем await
+            await run_self_improvement_cycle()  # <- Добавляем await
         except Exception as e:
             log_error(f"Ошибка в периодическом цикле самоулучшения: {e}")
         await asyncio.sleep(1800)  # 30 минут
@@ -1781,8 +1882,7 @@ signal.signal(signal.SIGTERM, handle_exit)
 # --- Автообновление из GitHub ---
 def auto_update_from_git():
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        repo_dir = Path(__file__).parent
+        repo_dir = Path(__file__).parent
         if shutil.which("git"):
             subprocess.run(["git", "-C", str(repo_dir), "pull"], check=True)
             logger.info("✅ Автообновление из GitHub выполнено")
@@ -1818,8 +1918,7 @@ def parse_errors_from_log(log_path=LOG_FILE_PATH):
     ]
 
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        with open(log_path, "r", encoding="utf-8") as log_file:
+        with open(log_path, "r", encoding="utf-8") as log_file:
             lines = log_file.readlines()
 
         buffer = []
@@ -1907,8 +2006,7 @@ def apply_fixes(fixes):
         if not fix_list:
             continue
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            path = Path(script)
+            path = Path(script)
             if not path.exists():
                 results.append(f"[ERROR] {script} не найден для исправления.")
                 continue
@@ -1977,8 +2075,7 @@ from utils.fix_syntax import fix_unclosed_syntax  # импорт там где �
 
 async def analyze_and_fix_script(script_path: Path, log_path: Path) -> bool:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        if isinstance(script_path, str):
+        if isinstance(script_path, str):
             script_path = Path(script_path)
         if isinstance(log_path, str):
             log_path = Path(log_path)
@@ -2015,8 +2112,7 @@ async def analyze_and_fix_script(script_path: Path, log_path: Path) -> bool:
 
         # Попытка компиляции с текущим кодом
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            compile(fixed_code, str(script_path), 'exec')
+            compile(fixed_code, str(script_path), 'exec')
         except SyntaxError as e:
             msg = str(e)
             if "was never closed" in msg or "unexpected EOF" in msg:
@@ -2024,8 +2120,7 @@ async def analyze_and_fix_script(script_path: Path, log_path: Path) -> bool:
 
                 fixed_code2 = fix_unclosed_syntax(fixed_code)
                 try:
-    except Exception as e:
-        print(f'AutoFix: {e}')                    compile(fixed_code2, str(script_path), 'exec')
+                    compile(fixed_code2, str(script_path), 'exec')
 
                     # Создаём резервную копию
                     backup_path = script_path.with_suffix(script_path.suffix + ".backup")
@@ -2047,8 +2142,7 @@ async def analyze_and_fix_script(script_path: Path, log_path: Path) -> bool:
 
         # Проверяем синтаксис окончательно с помощью ast
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            ast.parse(fixed_code)
+            ast.parse(fixed_code)
         except SyntaxError as e:
             logger.error(f"[FAIL] Синтаксическая ошибка после всех попыток: {e}")
             return False
@@ -2086,8 +2180,7 @@ async def try_fix_syntax_errors(script_path: Path, logger) -> bool:
     code = script_path.read_text(encoding='utf-8')
 
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        compile(code, str(script_path), 'exec')
+        compile(code, str(script_path), 'exec')
         return True
 
     except SyntaxError as e:
@@ -2095,8 +2188,7 @@ async def try_fix_syntax_errors(script_path: Path, logger) -> bool:
         if "was never closed" in msg or "unexpected EOF" in msg:
             code_fixed = fix_unclosed_syntax(code)
             try:
-    except Exception as e:
-        print(f'AutoFix: {e}')                compile(code_fixed, str(script_path), 'exec')
+                compile(code_fixed, str(script_path), 'exec')
                 script_path.write_text(code_fixed, encoding='utf-8')
                 logger.info(f"[FIX] Исправлены незакрытые скобки/кавычки в {script_path}")
                 await send_admin_message(f"🛠️ Автофикс: исправлены незакрытые конструкции в {script_path.name}")
@@ -2167,15 +2259,13 @@ def try_fix_syntax_errors(script_path: str, logger=None):
         return code_str
 
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        compile(code, script_path, 'exec')
+        compile(code, script_path, 'exec')
     except SyntaxError as e:
         msg = str(e)
         if "was never closed" in msg or "unexpected EOF" in msg:
             fixed_code = fix_unclosed_syntax(code)
             try:
-    except Exception as e:
-        print(f'AutoFix: {e}')                compile(fixed_code, script_path, 'exec')
+                compile(fixed_code, script_path, 'exec')
                 # Если успешно — сохраняем исправленный файл
                 with open(script_path, 'w', encoding='utf-8') as f:
                     f.write(fixed_code)
@@ -2226,8 +2316,7 @@ async def auto_fix_from_logs():
 async def manual_check(message: types.Message):
     await message.answer("🔎 Запускаю ручную проверку и автоисправление...")
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        result_main = await analyze_and_fix_script(MAIN_SCRIPT_PATH, LOG_PATH)
+        result_main = await analyze_and_fix_script(MAIN_SCRIPT_PATH, LOG_PATH)
         result_helper = await analyze_and_fix_script(HELPER_SCRIPT_PATH, LOG_PATH)
 
         if result_main or result_helper:
@@ -2249,8 +2338,7 @@ import subprocess
 
 def auto_backup_and_push():
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         backup_dir = f"backup/{timestamp}"
         os.makedirs(backup_dir, exist_ok=True)
 
@@ -2300,8 +2388,7 @@ def ai_auto_improve():
 
     for filename in files_to_improve:
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            original = read_file(filename)
+            original = read_file(filename)
             prompt = (
                 f"Вот код:\n{original[:12000]}\n\n"
                 f"Если есть проблемы, устаревшие участки, неэффективности или уязвимости — улучши его.\n"
@@ -2348,22 +2435,20 @@ from telegram.ext import CommandHandler, ContextTypes, filters
 
 # Константы (укажи свои, если уже есть, тогда просто пропусти)
 AUTHORIZED_USERS = [ ]  # Твой Telegram ID
-TELEGRAM_BOT_TOKEN    = ""
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 logger = logging.getLogger(__name__)
 
 def _is_authorized(update: Update) -> bool:
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        return update.effective_user.id in AUTHORIZED_USERS
+        return update.effective_user.id in AUTHORIZED_USERS
     except Exception as e:
         logger.warning(f"Authorization check failed: {e}")
         return False
 
 async def auto_backup_and_push():
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        logger.info("🔄 Выполняю git add/commit/push...")
+        logger.info("🔄 Выполняю git add/commit/push...")
         subprocess.run(["git", "add", "."], check=True)
         subprocess.run(
             ["git", "commit", "-m", "Auto backup from check_bot_diagnostics"], check=True
@@ -2381,8 +2466,7 @@ async def auto_fix_from_logs():
 
 async def auto_update_and_restart():
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        logger.info("⬇️ Проверяю обновления из GitHub...")
+        logger.info("⬇️ Проверяю обновления из GitHub...")
         result = subprocess.run(["git", "pull"], capture_output=True, text=True)
         logger.info(f"git pull output: {result.stdout.strip()}")
         if "Already up to date." not in result.stdout:
@@ -2451,8 +2535,7 @@ async def self_improve_from_logs():
         return
 
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        with open(ERROR_LOG_PATH, "r", encoding="utf-8") as f:
+        with open(ERROR_LOG_PATH, "r", encoding="utf-8") as f:
             logs = f.read()
 
         suggestions = []
@@ -2486,11 +2569,10 @@ async def self_improve_from_logs():
 
 from telegram.constants import ParseMode
 
-TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
 async def send_admin_report(context):
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        logs = ""
+        logs = ""
         if os.path.exists("error.log"):
             with open("error.log", "r", encoding="utf-8") as f:
                 logs += "📄 <b>Лог ошибок:</b>\n" + f.read()[-4000:] + "\n\n"
@@ -2522,8 +2604,8 @@ from datetime import datetime
 from git import Repo, GitCommandError
 
 # --- ТВОИ ДАННЫЕ (замени здесь) ---
-TELEGRAM_BOT_TOKEN    =   "TELEGRAM_BOT_TOKEN "
-TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
 LOG_FILE_PATH = "./rita_bot.log"  # путь к твоему лог файлу
 MAIN_SCRIPT_PATH = "./rita_main.py"  # путь к основному скрипту
 REPO_PATH = "./"  # путь к репозиторию git (обычно корень проекта)
@@ -2544,8 +2626,7 @@ async def send_telegram_message(text: str):
         "parse_mode": "HTML"
     }
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload) as resp:
                 if resp.status != 200:
                     logger.warning(f"Telegram message failed with status {resp.status}")
@@ -2559,8 +2640,7 @@ def read_log_tail(lines_count=200):
         logger.warning(f"Лог-файл {LOG_FILE_PATH} не найден")
         return []
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        with open(LOG_FILE_PATH, "r", encoding="utf-8") as f:
+        with open(LOG_FILE_PATH, "r", encoding="utf-8") as f:
             lines = f.readlines()
             return lines[-lines_count:]
     except Exception as e:
@@ -2600,8 +2680,7 @@ def check_main_script_health():
         return problems
 
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        with open(MAIN_SCRIPT_PATH, "r", encoding="utf-8") as f:
+        with open(MAIN_SCRIPT_PATH, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Проверяем ключевые функции
@@ -2632,8 +2711,7 @@ def create_improvement_file(content: str, name_hint: str) -> str:
     filename = os.path.join(IMPROVEMENTS_DIR, f"improve_{safe_name}_{timestamp}.py")
 
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        with open(filename, "w", encoding="utf-8") as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(content)
         logger.info(f"Создан файл улучшения: {filename}")
         return filename
@@ -2653,8 +2731,7 @@ import logging
 
 async def auto_update_script():
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        # Получаем последние изменения из репозитория
+        # Получаем последние изменения из репозитория
         result = subprocess.run(["git", "pull"], cwd="{}", capture_output=True, text=True)
         if "Already up to date." in result.stdout:
             logging.info("Auto-update: Скрипт уже актуален.")
@@ -2673,8 +2750,7 @@ def do_git_backup_and_push() -> (bool, str):
     Возвращает (успех, сообщение)
     """
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        repo = Repo(REPO_PATH)
+        repo = Repo(REPO_PATH)
         repo.git.add(MAIN_SCRIPT_PATH)
         repo.git.add(IMPROVEMENTS_DIR)
         commit_message = f"Auto backup {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
@@ -2746,8 +2822,7 @@ async def improvements_loop():
     """
     while True:
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            await analyze_and_improve_full()
+            await analyze_and_improve_full()
         except Exception as e:
             logger.error(f"Ошибка в цикле улучшений: {e}")
         await asyncio.sleep(6 * 3600)  # 6 часов
@@ -2762,23 +2837,38 @@ import re
 import subprocess
 import aiohttp
 import asyncio
+
+import os
+import re
+import subprocess
+import aiohttp
+import asyncio
 from telegram import Bot
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", "558079551"))
+
+if not TELEGRAM_BOT_TOKEN:
+    raise ValueError("❌ TELEGRAM_BOT_TOKEN не найден. Убедись, что он указан в .env")
+
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # === Настройки под тебя — замени на свои реальные данные ===
 LOG_FILE = "/mnt/data/rita_mega_bot/logs/rita_bot.log"  # путь к логу твоего основного бота (проверь точный)
 MAIN_SCRIPT = "/mnt/data/rita_mega_bot/rita_main.py"    # путь к основному скрипту
 GIT_REPO_PATH = "/mnt/data/rita_mega_bot"               # путь к git-репозиторию с твоим ботом
 
-TELEGRAM_BOT_TOKEN    = "TELEGRAM_BOT_TOKEN "  # твой реальный токен
-TELEGRAM_CHAT_ID = 558079551   # твой реальный ID (куда шлём уведомления)
-
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # твой реальный токен
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # Функция для отправки сообщения в телеграм
 async def send_telegram_message(text: str):
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=text)
+        await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=text)
     except Exception as e:
         print(f"[Telegram send error]: {e}")
 
@@ -2854,8 +2944,7 @@ async def auto_fix_loop(logger):
 
     # Далее делаем git commit и push
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        # Переходим в репозиторий
+        # Переходим в репозиторий
         proc = subprocess.run(["git", "-C", GIT_REPO_PATH, "add", "."], capture_output=True, text=True)
         if proc.returncode != 0:
             await send_telegram_message(f"❌ Git add failed:\n{proc.stderr}")
@@ -2919,7 +3008,7 @@ from telegram.error import Conflict
 nest_asyncio.apply()
 
 # ✅ Реальный Telegram токен пользователя
-TELEGRAM_BOT_TOKEN    = ""
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 # Логгер
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
@@ -2972,8 +3061,8 @@ from telegram.ext import (
 from telegram.error import Conflict
 
 # --- ТВОИ НАСТРОЙКИ ---
-TELEGRAM_BOT_TOKEN    = "TELEGRAM_BOT_TOKEN "
-OWNER_ID =558079551
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -3000,8 +3089,7 @@ def register_auxiliary_handlers(app):
 
 async def run_bot():
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        app = (
+        app = (
             ApplicationBuilder()
             .token(TELEGRAM_BOT_TOKEN)
             .concurrent_updates(True)
@@ -3050,14 +3138,12 @@ if __name__ == "__main__":
 
     for sig in (signal.SIGINT, signal.SIGTERM):
         try:
-    except Exception as e:
-        print(f'AutoFix: {e}')            loop.add_signal_handler(sig, loop.stop)
+            loop.add_signal_handler(sig, loop.stop)
         except NotImplementedError:
             pass
 
     try:
-    except Exception as e:
-        print(f'AutoFix: {e}')        loop.run_until_complete(main_entry())
+        loop.run_until_complete(main_entry())
     except KeyboardInterrupt:
         logger.warning("⛔ Бот остановлен вручную (Ctrl+C)")
     except Exception as e:
