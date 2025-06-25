@@ -1,0 +1,103 @@
+import os
+import re
+import logging
+import subprocess
+
+LOG_FILE = 'check_bot_diagnostics.log'
+RITA_MAIN_FILE = 'rita_main.py'
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+
+def ensure_logging_in_rita():
+    with open(RITA_MAIN_FILE, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    if 'logging.basicConfig' not in content:
+        logging.info('Настраиваю базовое логирование в rita_main.py...')
+
+        insert_code = (
+            "\nimport logging\n"
+            "logging.basicConfig(\n"
+            "    level=logging.DEBUG,\n"
+            "    format='%(asctime)s | %(levelname)s | %(message)s',\n"
+            "    handlers=[\n"
+            "        logging.FileHandler('check_bot_diagnostics.log', encoding='utf-8'),\n"
+            "        logging.StreamHandler()\n"
+            "    ]\n"
+            ")\n"
+        )
+
+        match = re.search(r'(^import .*\n)+', content, flags=re.MULTILINE)
+        if match:
+            pos = match.end()
+            new_content = content[:pos] + insert_code + content[pos:]
+        else:
+            new_content = insert_code + content
+
+        with open(RITA_MAIN_FILE, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        logging.info('Логирование добавлено.')
+    else:
+        logging.info('Логирование уже настроено в rita_main.py.')
+
+def analyze_and_fix_logs():
+    if not os.path.exists(LOG_FILE):
+        logging.info('Лог-файл не найден, пропускаю анализ.')
+        return
+
+    with open(LOG_FILE, 'r', encoding='utf-8') as f:
+        logs = f.read()
+
+    fixed = False
+
+    # Исправляем ошибку с TELEGRAM_CHAT_ID
+    if "name 'TELEGRAM_CHAT_ID' is not defined" in logs:
+        logging.info('Обнаружена ошибка: TELEGRAM_CHAT_ID не определён. Исправляю...')
+
+        with open(RITA_MAIN_FILE, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        if "TELEGRAM_CHAT_ID" not in content:
+            add_text = "\nimport os\nTELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '558079551')\n"
+            match = re.search(r'(^import .*\n)+', content, flags=re.MULTILINE)
+            if match:
+                pos = match.end()
+                content = content[:pos] + add_text + content[pos:]
+            else:
+                content = add_text + content
+
+            with open(RITA_MAIN_FILE, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            logging.info('Добавлено объявление TELEGRAM_CHAT_ID.')
+            fixed = True
+
+    # Здесь можно добавить другие проверки из логов по твоим ошибкам
+
+    if not fixed:
+        logging.info('Ошибок для исправления не обнаружено.')
+
+def git_commit_push(message='Auto-fix from log analysis'):
+    try:
+        subprocess.run(['git', 'add', RITA_MAIN_FILE, LOG_FILE], check=True)
+        subprocess.run(['git', 'commit', '-m', message], check=True)
+        subprocess.run(['git', 'push', 'origin', 'main', '--force'], check=True)
+        logging.info('Изменения успешно запушены в репозиторий.')
+    except subprocess.CalledProcessError as e:
+        logging.error(f'Ошибка при git операциях: {e}')
+
+def main():
+    logging.info('Запуск автоисправления по логам...')
+    ensure_logging_in_rita()
+    analyze_and_fix_logs()
+    git_commit_push()
+    logging.info('Работа завершена.')
+
+if __name__ == '__main__':
+    main()
