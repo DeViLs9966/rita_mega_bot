@@ -1,0 +1,45 @@
+import re
+from pathlib import Path
+
+FILES = ["rita_main.py", "check_bot_diagnostics.py"]
+
+def fix_exists_calls(file_path):
+    content = file_path.read_text(encoding="utf-8")
+
+    # Проверяем, есть ли импорт pathlib.Path, если нет — добавим в начало
+    if "from pathlib import Path" not in content:
+        content = "from pathlib import Path\n" + content
+
+    # Найдём все вызовы .exists(), например:
+    # some_var.exists()
+    # Надо убедиться, что some_var — строка, и если да, заменить на Path(some_var).exists()
+
+    # Чтобы избежать ошибок, будем искать строки, где перед .exists() стоит строка в кавычках или переменная, объявленная строкой — сложно анализировать весь код, сделаем простой хак:
+
+    # Паттерн для .exists() вызова
+    pattern = re.compile(r'([\'"].+?[\'"])\.exists')
+
+    # Заменим "some_string".exists() на Path(some_string).exists()
+    content_new = pattern.sub(r'Path(\1).exists()', content)
+
+    # Также исправим случаи, когда .exists() вызывается у переменной, которая объявлена в этой же строке как строка, например:
+    # log_dir = "./logs"
+    # if log_dir.exists():
+    # Это сложно автоматически исправить без парсинга, так что пока сделаем только с прямыми вызовами на строках
+
+    if content != content_new:
+        print(f"Исправляем вызовы .exists() в {file_path}")
+        file_path.write_text(content_new, encoding="utf-8")
+    else:
+        print(f"Вызовы .exists() не найдены в {file_path} или исправления не нужны.")
+
+def main():
+    for fname in FILES:
+        path = Path(fname)
+        if path.exists():
+            fix_exists_calls(path)
+        else:
+            print(f"Файл {fname} не найден.")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,79 @@
+import re
+from pathlib import Path
+import shutil
+
+FILES = ["rita_main.py", "check_bot_diagnostics.py"]
+
+SAFE_EXISTS_DEF = """
+from pathlib import Path
+
+def safe_exists(path):
+    if isinstance(path, str):
+        path = Path(path)
+    return path.exists()
+"""
+
+def add_safe_exists_def(content):
+    if "def safe_exists" in content:
+        return content  # уже есть
+    # Вставляем после импортов
+    imports = list(re.finditer(r'^(import .+|from .+ import .+)$', content, re.MULTILINE))
+    if imports:
+        last_import = imports[-1]
+        insert_pos = last_import.end()
+        return content[:insert_pos] + "\n" + SAFE_EXISTS_DEF + "\n" + content[insert_pos:]
+    else:
+        return SAFE_EXISTS_DEF + "\n" + content
+
+def find_exists_calls(content):
+    # Находим все вызовы .exists() с возможными пробелами
+    pattern = re.compile(r'(\S+)\s*\.exists\s*\s*')
+    return pattern.findall(content)
+
+def replace_exists_calls(content):
+    pattern = re.compile(r'(\S+)\s*\.exists\s*\s*')
+
+    def replacer(match):
+        expr = match.group(1)
+        return f"safe_exists({expr})"
+
+    return pattern.sub(replacer, content)
+
+def patch_file(filepath):
+    path = Path(filepath)
+    if not path.exists():
+        print(f"[WARNING] Файл {filepath} не найден, пропускаем.")
+        return
+
+    backup_path = path.with_suffix(path.suffix + ".bak")
+    shutil.copy(path, backup_path)
+    print(f"[INFO] Создан бэкап: {backup_path}")
+
+    content = path.read_text(encoding="utf-8")
+
+    calls_before = find_exists_calls(content)
+    if calls_before:
+        print(f"[INFO] В файле {filepath} найдено вызовов .exists(): {len(calls_before)}")
+        for c in calls_before:
+            print(f"  - {c}.exists()")
+    else:
+        print(f"[INFO] В файле {filepath} вызовов .exists() не найдено.")
+
+    content = add_safe_exists_def(content)
+    content = replace_exists_calls(content)
+
+    calls_after = find_exists_calls(content)
+    if calls_after:
+        print(f"[WARNING] После патча в {filepath} остались вызовы .exists(): {len(calls_after)}")
+    else:
+        print(f"[INFO] После патча в {filepath} вызовы .exists() успешно заменены.")
+
+    path.write_text(content, encoding="utf-8")
+    print(f"[INFO] Файл {filepath} пропатчен и сохранён.\n")
+
+def main():
+    for f in FILES:
+        patch_file(f)
+
+if __name__ == "__main__":
+    main()

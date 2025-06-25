@@ -1,10 +1,10 @@
-TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+TELEGRAM_BOT_TOKEN = Path("7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = "7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4"
+TELEGRAM_BOT_TOKEN = Path("7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '558079551')
 with open('.token_clean') as f:
     cleaned_token = f.read().strip()
@@ -38,13 +38,13 @@ import logging
 import signal
 import subprocess
 
-LOCK_FILE = "/data/data/com.termux/files/usr/tmp/rita_main.lock"
+LOCK_FILE = Path("/data/data/com.termux/files/usr/tmp/rita_main.lock")
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s | %(levelname)s | %(message)s',
     handlers=[
-        logging.FileHandler("rita_bot.log", encoding='utf-8'),
+        logging.FileHandler("logs/rita_bot.log", encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -112,7 +112,7 @@ async def background_error_log_analysis():
     Фоновая задача, которая регулярно проверяет лог файл на ошибки,
     и при обнаружении — вызывает обработчик для генерации исправлений.
     """
-    log_file_path = "bot.log"  # Путь к файлу логов — укажи свой актуальный
+    log_file_path = "logs/rita_bot.log"  # Путь к файлу логов — укажи свой актуальный
 
     while True:
         try:
@@ -142,7 +142,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HUGGINGFACE_API_KEY    = ""
 GOOGLE_API_KEY    = ""
 GOOGLE_CX    = ""
-TELEGRAM_BOT_TOKEN = "7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4"
+TELEGRAM_BOT_TOKEN = Path("7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 TELEGRAM_ADMIN_ID =  
 
 logging.basicConfig(
@@ -152,7 +152,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 AI_MODES = ["gpt4", "gpt2", "gog", "ht"]
-current_mode = "gpt4"
+current_mode = Path("gpt4")
 
 async def main():
     application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
@@ -234,7 +234,7 @@ logger = logging.getLogger(__name__)
 # Пути к скриптам и логам (замени при необходимости)
 MAIN_SCRIPT_PATH = Path("rita_main.py")
 HELPER_SCRIPT_PATH = Path("check_bot_diagnostics.py")
-LOG_FILE_PATH = Path("rita_main.log")  # путь к лог-файлу для анализа
+LOG_FILE_PATH = Path("logs/rita_bot.log")  # путь к лог-файлу для анализа
 
 # Логгеры для удобства
 def log_info(msg):
@@ -316,7 +316,7 @@ def call_google_search(query: str) -> str:
         items = resp.json().get("items", [])
         if not items:
             return "По вашему запросу ничего не найдено."
-        output = "Результаты поиска Google:\n"
+output = Path("Результаты поиска Google:\n")
         for i, item in enumerate(items, start=1):
             title = item.get("title", "Без названия")
             snippet = item.get("snippet", "")
@@ -487,7 +487,7 @@ async def handle_all_messages(update: Update, context: ContextTypes.DEFAULT_TYPE
     elif current_mode == "ht":
         response = call_huggingface_search(text)
     else:
-        response = "Неизвестный режим."
+response = Path("Неизвестный режим.")
 
     await update.message.reply_text(response)
 
@@ -553,7 +553,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s | %(levelname)s | %(message)s',
     handlers=[
-        logging.FileHandler("rita_bot.log", encoding='utf-8'),
+        logging.FileHandler("logs/rita_bot.log", encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -700,7 +700,7 @@ import os
 import sys
 import logging
 
-LOCK_FILE = 'rita_bot.lock'
+LOCK_FILE = Path("rita_bot.lock")
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
@@ -936,6 +936,15 @@ import asyncio
 
 
 import asyncio
+from pathlib import Path
+os.makedirs('logs', exist_ok=True)  # Create logs dir if missing
+
+def safe_exists(path):
+    if isinstance(path, str):
+        path = Path(path)
+    return path.exists()
+
+
 
     loop = asyncio.get_event_loop()
     try:
@@ -960,3 +969,122 @@ if __name__ == '__main__':
         loop.run_until_complete(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())

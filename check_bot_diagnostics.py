@@ -1,4 +1,114 @@
-TELEGRAM_BOT_TOKEN = '7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4'
+
+
+
+
+from pathlib import Path
+import sys
+import traceback
+
+def log_exceptions(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        # Чтобы не мешать выходу через Ctrl+C
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    print("Ошибка (с трейсбеком):")
+    traceback.print_exception(exc_type, exc_value, exc_traceback)
+
+sys.excepthook = log_exceptions
+
+
+
+
+import sys
+import traceback
+
+def log_exceptions(type, value, tb):
+    traceback.print_exception(type, value, tb)
+sys.excepthook = log_exceptions
+
+import os
+import sys
+import logging
+import asyncio
+from dotenv import load_dotenv
+import openai
+
+# --- Загрузка переменных окружения ---
+load_dotenv()
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_CX = os.getenv("GOOGLE_CX")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+
+# Поддержка двух названий переменной для ADMIN ID
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID") or os.getenv("ADMIN_TELEGRAM_ID")
+
+# Проверки наличия ключей
+if not TELEGRAM_BOT_TOKEN:
+    logging.error("Ошибка: TELEGRAM_BOT_TOKEN не найден в .env")
+    sys.exit(1)
+if not OPENAI_API_KEY:
+    logging.error("Ошибка: OPENAI_API_KEY не найден в .env")
+    sys.exit(1)
+if not HF_API_TOKEN:
+    logging.error("Ошибка: HF_API_TOKEN не найден в .env")
+    sys.exit(1)
+if not ADMIN_CHAT_ID:
+    logging.error("Ошибка: ADMIN_CHAT_ID или ADMIN_TELEGRAM_ID не найден в .env")
+    sys.exit(1)
+
+try:
+    ADMIN_CHAT_ID = int(ADMIN_CHAT_ID)
+except ValueError:
+    logging.error("ADMIN_CHAT_ID должен быть числом!")
+    sys.exit(1)
+
+# Настройка логгера
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s | %(message)s",
+    level=logging.INFO,
+)
+logger = logging.getLogger(__name__)
+
+logger.info(f"Telegram Token: {TELEGRAM_BOT_TOKEN[:10]}... (длина {len(TELEGRAM_BOT_TOKEN)})")
+logger.info(f"OpenAI Key: {OPENAI_API_KEY[:10]}... (длина {len(OPENAI_API_KEY)})")
+logger.info(f"HuggingFace Token: {HF_API_TOKEN[:10]}... (длина {len(HF_API_TOKEN)})")
+logger.info(f"Admin Chat ID: {ADMIN_CHAT_ID}")
+
+# Инициализация OpenAI
+openai.api_key = OPENAI_API_KEY
+
+# Пример асинхронного вызова OpenAI с исправленной моделью
+async def call_openai_gpt4(prompt: str) -> str:
+    try:
+        response = await openai.ChatCompletion.acreate(
+            model="gpt-4o-mini",  # Обязательно используй именно эту модель!
+            messages=[
+                {"role": "system", "content": "Ты - умный и дружелюбный помощник."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.5,
+            max_tokens=1000,
+            n=1,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error(f"OpenAI API error: {e}")
+        return "Ошибка при вызове OpenAI API."
+
+# Далее — твой основной код скрипта check_bot_diagnostics.py,
+# где используешь эти переменные и функцию call_openai_gpt4
+
+
+
+
+
+
+
+TELEGRAM_BOT_TOKEN = "7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4"
 with open('.token_clean') as f:
     cleaned_token = f.read().strip()
 
@@ -11,7 +121,7 @@ import traceback
 
 import os
 
-TOKEN_FILE = ".token_clean"
+TOKEN_FILE = Path(".token_clean")
 
 def load_clean_token():
     if os.path.exists(TOKEN_FILE):
@@ -48,6 +158,25 @@ HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
 GITHUB_PAT = os.getenv("GITHUB_PAT")
 
 
+
+
+
+
+
+
+import os
+import sys
+
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID") or os.getenv("ADMIN_TELEGRAM_ID")
+if ADMIN_CHAT_ID is None:
+    print("Ошибка: переменная ADMIN_CHAT_ID или ADMIN_TELEGRAM_ID не установлена в окружении")
+    sys.exit(1)
+
+try:
+    ADMIN_CHAT_ID = int(ADMIN_CHAT_ID)
+except ValueError:
+    print("Ошибка: ADMIN_CHAT_ID должен быть числом")
+    sys.exit(1)
 
 
 
@@ -97,9 +226,9 @@ if not TELEGRAM_BOT_TOKEN:
 bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # === Пути к файлам ===
-LOG_FILE = "/mnt/data/rita_mega_bot/logs/rita_bot.log"
-MAIN_SCRIPT = "/mnt/data/rita_mega_bot/rita_main.py"
-GIT_REPO_PATH = "/mnt/data/rita_mega_bot"
+LOG_FILE = Path("logs/rita_bot.log")
+MAIN_SCRIPT = Path("/mnt/data/rita_mega_bot/rita_main.py")
+GIT_REPO_PATH = Path("/mnt/data/rita_mega_bot")
 
 
 from dotenv import load_dotenv
@@ -261,7 +390,7 @@ import asyncio
 
 def read_logs():
     try:
-        with open("rita_bot.log", "r", encoding="utf-8") as f:
+        with open("logs/rita_bot.log", "r", encoding="utf-8") as f:
             logs = f.read()
         logger.info("Логи успешно прочитаны.")
         return logs
@@ -459,20 +588,20 @@ async def process_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Команды переключения режимов
     if text.lower().startswith("/gpt4"):
-        current_mode = "gpt4"
-        await update.message.reply_text("Режим переключен на GPT-4o-mini (OpenAI).")
+        current_mode = Path("gpt4")
+        await update.message.reply_text("Режим переключен на GPT-4o-mini (OpenAI GPT-4).")
         return
     elif text.lower().startswith("/gpt2"):
-        current_mode = "gpt2"
-        await update.message.reply_text("Режим переключен на GPT-2 (Hugging Face).")
+        current_mode = Path("gpt2")
+        await update.message.reply_text("Режим переключен на GPT-2 (HuggingFace GPT-2).")
         return
     elif text.lower().startswith("/gog"):
-        current_mode = "gog"
-        await update.message.reply_text("Режим переключен на Google поиск (заглушка).")
+        current_mode = Path("gog")
+        await update.message.reply_text("Режим переключен на Google поиск.")
         return
     elif text.lower().startswith("/ht"):
-        current_mode = "ht"
-        await update.message.reply_text("Режим переключен на HuggingFace/DuckDuckGo поиск (заглушка).")
+        current_mode = Path("ht")
+        await update.message.reply_text("Режим переключен на HuggingFace/DuckDuckGo поиск.")
         return
     elif text.lower().startswith("/start"):
         await update.message.reply_text(
@@ -481,6 +610,8 @@ async def process_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Пиши что угодно, и я отвечу в текущем режиме."
         )
         return
+
+
 
     # Обработка сообщений по режимам
     if current_mode == "gpt4":
@@ -506,7 +637,7 @@ async def pro_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def main():
     application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-
+    asyncio.create_task(background_auto_fix_loop())
     application.add_handler(CommandHandler("start", process_message))
     application.add_handler(CommandHandler("gpt4", process_message))
     application.add_handler(CommandHandler("gpt2", process_message))
@@ -625,7 +756,7 @@ def safe_restart_rita_main():
 import asyncio
 from pathlib import Path
 
-LOG_FILE_PATH = Path("check_bot_diagnostics.log")
+LOG_FILE_PATH = Path("logs/rita_bot.log")
 MAIN_SCRIPT_PATH = Path("rita_main.py")
 HELPER_SCRIPT_PATH = Path("check_bot_diagnostics.py")
 
@@ -640,7 +771,7 @@ async def auto_fix_from_logs():
     try:
         # Обязательно оборачиваем в Path, чтобы избежать ошибок 'str' object has no attribute 'exists'
         rita_main_path = Path("rita_main.py")
-        rita_log_path = Path("rita_main.log")
+        rita_log_path = Path("logs/rita_bot.log")
 
         check_bot_path = Path("check_bot_diagnostics.py")
         check_log_path = Path("check_logs.txt")
@@ -703,7 +834,7 @@ logger = logging.getLogger(__name__)
 # Пути к скриптам и логам (замени при необходимости)
 MAIN_SCRIPT_PATH = Path("rita_main.py")
 HELPER_SCRIPT_PATH = Path("check_bot_diagnostics.py")
-LOG_FILE_PATH = Path("rita_main.log")  # путь к лог-файлу для анализа
+LOG_FILE_PATH = Path("logs/rita_bot.log")  # путь к лог-файлу для анализа
 
 # Логгеры для удобства
 def log_info(msg):
@@ -834,7 +965,7 @@ import time
 # Пути к скриптам и логу (замени на свои пути, если надо)
 MAIN_SCRIPT_PATH = Path("rita_main.py")
 HELPER_SCRIPT_PATH = Path("check_bot_diagnostics.py")
-LOG_FILE_PATH = Path("check_bot_diagnostics.log")
+LOG_FILE_PATH = Path("logs/rita_bot.log")
 
 # Глобальные переменные для хранения последних хешей файлов
 last_main_hash = ""
@@ -967,7 +1098,7 @@ OWNER_TELEGRAM_ID = int(os.getenv("OWNER_TELEGRAM_ID", 0))
 MAIN_SCRIPT_PATH = Path(__file__).parent / "rita_main.py"
 DIAGNOSTICS_SCRIPT_PATH = Path(__file__).resolve()
 
-LOG_FILE = Path(__file__).parent / "check_bot_diagnostics.log"
+LOG_FILE = Path(__file__).parent / "logs/rita_bot.log"
 logging.basicConfig(
     filename=LOG_FILE,
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -1048,11 +1179,11 @@ from pathlib import Path
 import requests
 import time
 
-LOG_FILE = Path("./check_bot_diagnostics.log")
+LOG_FILE = Path("logs/rita_bot.log")
 MAIN_SCRIPT_PATH = Path("./rita_main.py")
 HELPER_SCRIPT_PATH = Path("./check_bot_diagnostics.py")
 
-REPO_RAW_URL = "https://raw.githubusercontent.com/DeViLs9966/rita_mega_bot/main"
+REPO_RAW_URL = Path("https://raw.githubusercontent.com/DeViLs9966/rita_mega_bot/main")
 
 # --- Логирование ---
 def log_debug(msg):
@@ -1178,6 +1309,8 @@ async def cmd_update_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("✅ rita_main.py обновлён.")
     else:
         await update.message.reply_text("ℹ️ rita_main.py без изменений.")
+
+
 async def cmd_update_self(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_TELEGRAM_ID:
         await update.message.reply_text("⛔ У вас нет доступа к этой команде.")
@@ -1191,7 +1324,6 @@ async def cmd_update_self(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("✅ check_bot_diagnostics.py обновлён.")
     else:
         await update.message.reply_text("ℹ️ Скрипт уже актуален.")
-
 
 # — Отправка Telegram-сообщения —
 async def send_telegram_message(text: str):
@@ -1484,7 +1616,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # Лог-файл
-LOG_FILE = 'rita_diagnostics.log'
+LOG_FILE = Path("logs/rita_bot.log")
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -1683,6 +1815,8 @@ async def handle_command_pro(update, context: ContextTypes.DEFAULT_TYPE):
 
 # Обработка команды /proverka — проверка и исправление (самообновление)
 # Функция обработки команды /proverka — проверка и обновление скриптов
+
+
 async def handle_command_proverka(update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id != OWNER_TELEGRAM_ID:
@@ -1703,7 +1837,9 @@ async def handle_command_proverka(update, context: ContextTypes.DEFAULT_TYPE):
     msg += f"Вспомогательный скрипт: {'обновлён' if updated_helper else 'без изменений'}"
 
     await context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
-    log_info("Команда /proverka выполнена, результат отправлен администратору.")
+    log_info("Команда /proverka выполнена, результат отправлен администратору")
+
+
 
 # Функция
 # сообщения админуотправки сообщений админу из любого места скрипта
@@ -1759,7 +1895,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Пути к скриптам и логу
 MAIN_SCRIPT_PATH = Path("rita_main.py")
 HELPER_SCRIPT_PATH = Path("check_bot_diagnostics.py")
-LOG_FILE_PATH = Path("check_bot_diagnostics.log")
+LOG_FILE_PATH = Path("logs/rita_bot.log")
 
 async def generate_fix_patch(error_log_snippet: str, file_content: str) -> str:
     """
@@ -1819,7 +1955,6 @@ def monitor_main_script(interval=60):
     thread = threading.Thread(target=loop, daemon=True)
     thread.start()
     log_info("🩺 Запущен мониторинг процесса rita_main.py")
-
 async def run_self_improvement_cycle():
     """
     Запускает полный цикл самоулучшения:
@@ -1830,10 +1965,10 @@ async def run_self_improvement_cycle():
     - Отправляет отчеты администратору.
     """
     try:
-        error_report = analyze_errors_for_self_learning()  # должна быть функция из твоего кода
-        await send_admin_message(error_report)            # должна быть асинхронная функция отправки в Telegram
+        error_report = analyze_errors_for_self_learning()  # должна быть синхронной функцией
+        await send_admin_message(error_report)  # асинхронная
 
-        repo_raw_url = "https://raw.githubusercontent.com/DeViLs9966/rita_mega_bot/main"
+        repo_raw_url = "https://raw.githubusercontent.com/DeViLs9966/rita_mega_bot/main/"
         updated_main = auto_update_script(MAIN_SCRIPT_PATH, repo_raw_url)
         updated_helper = auto_update_script(HELPER_SCRIPT_PATH, repo_raw_url)
 
@@ -1844,11 +1979,13 @@ async def run_self_improvement_cycle():
             await restart_main_script()  # асинхронная функция для перезапуска основного скрипта
 
         if updated_helper or fixed_helper:
-            await send_admin_message("🛠 check_bot_diagnostics.py был обновлен или исправлен.")
+            await send_admin_message("🛠 check_bot_diagnostics.py был обновлён и перезапущен.")
 
         log_info("✅ Цикл самоулучшения завершён.")
     except Exception as e:
         log_error(f"❌ Ошибка в цикле самоулучшения: {e}")
+
+
 
 # check_bot_diagnostics.py — БЛОК 5 из 6
 
@@ -1859,7 +1996,7 @@ import requests
 import socket
 
 # Повторно: лог-файл
-LOG_FILE = Path("./diagnostics.log")
+LOG_FILE = Path("logs/rita_bot.log")
 
 def log_error(message: str):
     with open(LOG_FILE, "a", encoding="utf-8") as logf:
@@ -1872,6 +2009,9 @@ def log_info(message: str):
     logger.info(f"[INFO] {message}")
 
 # --- Самообучение: анализ логов ---
+
+
+
 def analyze_errors_for_self_learning() -> str:
     if not LOG_FILE.exists():
         return "Лог файл не найден для анализа."
@@ -1879,24 +2019,33 @@ def analyze_errors_for_self_learning() -> str:
     try:
         with open(LOG_FILE, "r", encoding="utf-8") as f:
             lines = f.readlines()
+
+        # Фильтруем строки с ошибками
         error_lines = [line for line in lines if "[ERROR]" in line]
-        recent_errors = error_lines[-100:]
         error_summary = {}
 
-        for err in recent_errors:
+        # Считаем частоту каждой ошибки
+        for err in error_lines:
             key = err.strip()
             error_summary[key] = error_summary.get(key, 0) + 1
 
+        # Сортируем по убыванию количества повторений
         sorted_errors = sorted(error_summary.items(), key=lambda x: x[1], reverse=True)
 
+        # Формируем отчёт
         report = "📋 Отчёт самообучения (частота ошибок):\n"
-        for err, count in sorted_errors[:10]:
+        for err, count in sorted_errors[:100]:  # можно увеличить до 50 или 100
             report += f"{count} раз: {err}\n"
 
         return report
     except Exception as e:
         log_error(f"Ошибка анализа логов: {e}")
         return "Ошибка при анализе логов."
+
+
+
+
+
 
 # --- Обновление скрипта с GitHub ---
 # --- Обновление скрипта с GitHub ---
@@ -1959,32 +2108,47 @@ def get_script_version(script_path: Path) -> str:
     except Exception as e:
         log_error(f"Ошибка получения версии {script_path.name}: {e}")
         return "error"
+
+
+import asyncio
+from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
+
 async def background_error_log_analysis():
     while True:
         try:
-            # Путь к логу, замени при необходимости
-            log_file = "rita_bot.log"
-            with open(log_file, "r", encoding="utf-8") as f:
-                log_text = f.read()
-            errors = parse_error_logs(log_text)
-            if errors:
-                fixes = generate_fixes_for_errors(errors)
-                if fixes:
-                    apply_fixes(fixes)
-                    await send_admin_message(f"🛠 Автоматические исправления применены: {fixes}")
-            await asyncio.sleep(300)  # Пауза 5 минут между проверками
+            log_file = Path("logs/rita_bot.log")  # актуальный путь к логу
+            if log_file.exists():
+                with open(log_file, "r", encoding="utf-8") as f:
+                    log_text = f.read()
+                errors = parse_error_logs(log_text)  # ваша функция разбора ошибок
+                if errors:
+                    fixes = generate_fixes_for_errors(errors)  # ваша функция генерации фиксов
+                    if fixes:
+                        apply_fixes(fixes)  # ваша функция применения фиксов
+                        await send_admin_message("🛠 Автоматические исправления применены.")
+            else:
+                logger.warning(f"Файл лога не найден: {log_file}")
+
+            await asyncio.sleep(300)  # 5 минут пауза между проверками
+
         except Exception as e:
-            logger.info(f"[ERROR] Ошибка в background_error_log_analysis: {e}")
-            await asyncio.sleep(60)
+            logger.error(f"[ERROR] Ошибка в background_error_log_analysis: {e}")
+            await asyncio.sleep(60)  # при ошибке ждем минуту и пытаемся снова
+
+
 
 
 # --- Полный цикл самообучения и автообновления ---
+
 async def run_self_improvement_cycle():
     try:
         error_report = analyze_errors_for_self_learning()
         await send_admin_message(error_report)
 
-        repo_raw_url = "https://github.com/DeViLs9966/rita_mega_bot"
+        repo_raw_url = Path("https://github.com/DeViLs9966/rita_mega_bot")
         updated_main = auto_update_script(MAIN_SCRIPT_PATH, repo_raw_url)
         updated_helper = auto_update_script(HELPER_SCRIPT_PATH, repo_raw_url)
 
@@ -1997,6 +2161,8 @@ async def run_self_improvement_cycle():
         logger.info("✅ Цикл самоулучшения завершён.")
     except Exception as e:
         logger.error(f"❌ Ошибка в цикле самообучения: {e}")
+
+
 
 # --- Проверки доступа к API и интернету ---
 def check_openai_api() -> bool:
@@ -2141,7 +2307,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-LOG_FILE_PATH = "rita_bot.log"  # путь к файлу логов, где скрипт пишет ошибки
+LOG_FILE_PATH = "logs/rita_bot.log"  # путь к файлу логов, где скрипт пишет ошибки
 MAIN_SCRIPT_PATH = Path("rita_main.py")
 DIAGNOSTIC_SCRIPT_PATH = Path("check_bot_diagnostics.py")
 
@@ -2303,7 +2469,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s | %(levelname)s | %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+datefmt = Path("%Y-%m-%d %H:%M:%S")
 )
 
 from pathlib import Path
@@ -2768,8 +2934,8 @@ def register_auxiliary_handlers(application):
 import re
 from datetime import datetime
 
-IMPROVEMENT_LOG = "improvement_suggestions.log"
-ERROR_LOG_PATH = "error.log"
+IMPROVEMENT_LOG = Path("logs/rita_bot.log")
+ERROR_LOG_PATH = Path("logs/rita_bot.log")
 
 async def self_improve_from_logs():
     logger.info("🤖 Начинаю анализ логов для саморазвития...")
@@ -2813,27 +2979,79 @@ async def self_improve_from_logs():
 from telegram.constants import ParseMode
 
 TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
-async def send_admin_report(context):
-    try:
-        logs = ""
-        if os.path.exists("error.log"):
-            with open("error.log", "r", encoding="utf-8") as f:
-                logs += "📄 <b>Лог ошибок:</b>\n" + f.read()[-4000:] + "\n\n"
-        if os.path.exists("improvement_suggestions.log"):
-            with open("improvement_suggestions.log", "r", encoding="utf-8") as f:
-                logs += "💡 <b>Улучшения:</b>\n" + f.read()[-4000:] + "\n\n"
 
-        if not logs:
-            logs = "✅ Нет ошибок и предложений. Всё работает стабильно."
+
+
+
+import os
+from pathlib import Path
+from telegram.constants import ParseMode
+import logging
+
+logger = logging.getLogger(__name__)
+OWNER_ID = 558079551  # твой ID
+
+async def send_admin_detailed_report(context):
+    try:
+        log_path = Path("logs/rita_bot.log")
+        if not log_path.exists():
+            await context.bot.send_message(
+                chat_id=OWNER_ID,
+                text="✅ Лог файл не найден. Всё работает стабильно.",
+                parse_mode=ParseMode.HTML
+            )
+            return
+
+        with open(log_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        errors = {}
+        improvements = {}
+
+        for idx, line in enumerate(lines, start=1):
+            lower = line.lower()
+            if "[error]" in lower:
+                key = line.strip()
+                if key not in errors:
+                    errors[key] = {"count": 0, "lines": []}
+                errors[key]["count"] += 1
+                errors[key]["lines"].append(idx)
+            elif "[fix]" in lower or "[info]" in lower or "улучш" in lower:
+                key = line.strip()
+                if key not in improvements:
+                    improvements[key] = {"count": 0, "lines": []}
+                improvements[key]["count"] += 1
+                improvements[key]["lines"].append(idx)
+
+        def format_section(title, data_dict):
+            if not data_dict:
+                return f"<b>{title}:</b>\nНет записей.\n\n"
+            result = f"<b>{title} (всего {sum(v['count'] for v in data_dict.values())} записей):</b>\n"
+            for text, info in sorted(data_dict.items(), key=lambda x: x[1]['count'], reverse=True):
+                lines_sample = ", ".join(str(n) for n in info["lines"][:5])  # первые 5 номеров строк
+                short_text = text if len(text) < 100 else text[:97] + "..."
+                result += f" - <b>{info['count']}</b> раз (строки {lines_sample}): {short_text}\n"
+            return result + "\n"
+
+        report = ""
+        report += format_section("Ошибки", errors)
+        report += format_section("Улучшения и информационные записи", improvements)
+
+        if not errors and not improvements:
+            report = "✅ Лог пуст или не содержит ошибок и улучшений."
+
+        # Ограничим длину сообщения — Telegram ограничивает длину текста (4096 символов),
+        # можно отправлять частями, но пока отправим максимум 4000 символов.
+        if len(report) > 4000:
+            report = report[:3997] + "..."
 
         await context.bot.send_message(
             chat_id=OWNER_ID,
-            text=logs,
+            text=report,
             parse_mode=ParseMode.HTML,
         )
     except Exception as e:
-        logger.error(f"⚠️ Ошибка при отправке отчета админу: {e}")
-
+        logger.error(f"⚠️ Ошибка при отправке подробного отчёта админу: {e}")
 
 
 
@@ -2849,12 +3067,12 @@ from git import Repo, GitCommandError
 # --- ТВОИ ДАННЫЕ (замени здесь) ---
 TELEGRAM_BOT_TOKEN = "7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4"
 TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
-LOG_FILE_PATH = "./rita_bot.log"  # путь к твоему лог файлу
+LOG_FILE_PATH = "logs/rita_bot.log"  # путь к твоему лог файлу
 MAIN_SCRIPT_PATH = "./rita_main.py"  # путь к основному скрипту
 REPO_PATH = "./"  # путь к репозиторию git (обычно корень проекта)
 
 # Папка для новых улучшений
-IMPROVEMENTS_DIR = "./improvements"
+IMPROVEMENTS_DIR = Path("./improvements")
 os.makedirs(IMPROVEMENTS_DIR, exist_ok=True)
 
 logger = logging.getLogger(__name__)
@@ -3007,57 +3225,92 @@ def do_git_backup_and_push() -> (bool, str):
         return False, f"Ошибка git backup: {e}"
 
 
+
+import re
+from datetime import datetime
+
 async def analyze_and_improve_full():
     """
     Полный анализ, генерация улучшений, отправка отчётов, бэкап и пуш.
+    Включает номера строк, контекст ошибок и диапазон строк улучшений.
     """
 
-    log_lines = read_log_tail(200)
+    log_lines = read_log_tail(500)
     errors, successes = detect_errors_and_successes(log_lines)
     script_problems = check_main_script_health()
 
-    # Сформировать отчет
-    report = "<b>Отчет об анализе Rita Mega Bot</b>\n\n"
-    report += f"<b>Успешные действия (последние 10):</b>\n"
-    report += "\n".join(successes[-10:]) + "\n\n" if successes else "Нет данных.\n\n"
+    report = "<b>📊 Отчет об анализе Rita Mega Bot</b>\n"
+    report += f"<i>Дата: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>\n\n"
 
-    report += "<b>Ошибки (последние 10):</b>\n"
-    report += "\n".join(errors[-10:]) + "\n\n" if errors else "Ошибок нет.\n\n"
+    # ✅ Успехи
+    report += "<b>✅ Успешные действия (последние 10):</b>\n"
+    if successes:
+        report += "\n".join(successes[-10:]) + "\n\n"
+    else:
+        report += "Нет зафиксированных успешных событий.\n\n"
 
-    report += "<b>Проблемы с основным скриптом:</b>\n"
+    # ❌ Ошибки с анализом строк
+    report += "<b>❌ Ошибки (последние 10):</b>\n"
+    if errors:
+        error_analysis = []
+        for err in errors[-10:]:
+            match = re.search(r'File "(.+)", line (\d+)', err)
+            if match:
+                file_name = match.group(1)
+                line_num = int(match.group(2))
+                error_analysis.append(f"{file_name}, строка {line_num}: {err.strip()}")
+            else:
+                error_analysis.append(err.strip())
+        report += "\n".join(error_analysis) + "\n\n"
+    else:
+        report += "Ошибок не обнаружено.\n\n"
+
+    # 🔍 Анализ проблем скрипта
+    report += "<b>🧠 Проблемы с кодом скрипта:</b>\n"
     if script_problems:
         report += "\n".join(script_problems) + "\n\n"
     else:
-        report += "Проблем не обнаружено.\n\n"
+        report += "Проблем с основным кодом не найдено.\n\n"
 
+    # 🛠 Генерация улучшений
     improvements_created = []
-
-    # Генерируем реальные улучшения, если проблемы есть
     if script_problems or errors:
-        # Добавим улучшение: автообновление если его нет
+        report += "<b>🛠 Сгенерированные улучшения:</b>\n"
+
+        # Пример улучшения: добавить автообновление если его нет
         auto_update_code = generate_auto_update_improvement()
         fname = create_improvement_file(auto_update_code, "auto_update")
+
         if fname:
             improvements_created.append(fname)
-
+            report += f"Создано улучшение: <code>{fname}</code> (автообновление).\n"
+        else:
+            report += "Не удалось сгенерировать код улучшения.\n"
     else:
-        report += "Все системы работают стабильно. Рекомендуется поддерживать резервное копирование.\n"
+        report += "Улучшения не требуются — всё работает стабильно.\n"
 
-    # Отправить отчет в Telegram
+    # 📤 Отправка отчета
     await send_telegram_message(report)
-    logger.info("Отчет отправлен в Telegram.")
+    logger.info("📤 Подробный отчет отправлен в Telegram.")
 
-    # Сделать git backup и push
+    # 💾 Git backup и push
     success, msg = do_git_backup_and_push()
     if success:
         await send_telegram_message(f"✅ Git backup и push прошли успешно.")
     else:
-        await send_telegram_message(f"❌ Ошибка git backup/push:\n{msg}")
+        await send_telegram_message(f"⚠️ Git backup/push не выполнен:\n{msg}")
 
     logger.info(msg)
 
     if improvements_created:
         logger.info(f"Созданы файлы улучшений: {improvements_created}")
+
+
+
+
+
+
+
 
 async def improvements_loop():
     """
@@ -3100,7 +3353,7 @@ if not TELEGRAM_BOT_TOKEN:
 bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # === Настройки под тебя — замени на свои реальные данные ===
-LOG_FILE = "/mnt/data/rita_mega_bot/logs/rita_bot.log"  # путь к логу твоего основного бота (проверь точный)
+LOG_FILE = "logs/rita_bot.log"  # путь к логу твоего основного бота (проверь точный)
 MAIN_SCRIPT = "/mnt/data/rita_mega_bot/rita_main.py"    # путь к основному скрипту
 GIT_REPO_PATH = "/mnt/data/rita_mega_bot"               # путь к git-репозиторию с твоим ботом
 
@@ -3170,47 +3423,170 @@ async def add_missing_function(func_code: str, func_name: str):
     return True
 
 # Автофикс и коммит изменений
+
+
+
+import asyncio
+import os
+import subprocess
+import logging
+from pathlib import Path
+from telegram.constants import ParseMode
+
+logger = logging.getLogger(__name__)
+
+# Константы — подкорректируй под свой проект
+LOG_FILE = Path("logs/rita_bot.log")
+OWNER_ID = 558079551
+GIT_REPO_PATH = Path(".")  # Путь к корню репозитория
+
+# --- Чтение всего лога ---
+def read_full_log():
+    if not LOG_FILE.exists():
+        logger.warning(f"Лог-файл {LOG_FILE} не найден")
+        return []
+    with open(LOG_FILE, encoding="utf-8") as f:
+        return f.readlines()
+
+# --- Анализ логов: ошибки и успехи с указанием номера строки ---
+def analyze_log_details(log_lines):
+    errors = []
+    successes = []
+    for i, line in enumerate(log_lines, start=1):
+        low_line = line.lower()
+        if "[error]" in low_line or "traceback" in low_line:
+            errors.append(f"Строка {i}: {line.strip()}")
+        elif "[info]" in low_line or "[success]" in low_line:
+            successes.append(f"Строка {i}: {line.strip()}")
+    return errors, successes
+
+# --- Проверка состояния основного скрипта (пример, добавь свою логику) ---
+def check_main_script_health():
+    problems = []
+    # TODO: здесь можешь добавить анализ файла rita_main.py на типичные проблемы,
+    # например, отсутствуют нужные async вызовы, ошибки синтаксиса и т.п.
+    # Ниже пример:
+    main_path = Path("rita_main.py")
+    if not main_path.exists():
+        problems.append("❌ Основной скрипт rita_main.py не найден.")
+    else:
+        with open(main_path, encoding="utf-8") as f:
+            text = f.read()
+            if "asyncio.run(main()" not in text:
+                problems.append("⚠️ Не найден вызов asyncio.run(main()) в rita_main.py")
+    return problems
+
+# --- Отправка отчёта в Telegram ---
+async def send_telegram_message(text, app=None):
+    try:
+        if app is None:
+            from telegram.ext import ApplicationBuilder
+            app = ApplicationBuilder().token("ТВОЙ_ТЕЛЕГРАМ_ТОКЕН").build()
+            # Важно: если у тебя есть глобальный app, используй его!
+        await app.bot.send_message(chat_id=OWNER_ID, text=text, parse_mode=ParseMode.HTML)
+        logger.info("Отчёт отправлен в Telegram.")
+    except Exception as e:
+        logger.error(f"Ошибка при отправке сообщения в Telegram: {e}")
+
+# --- Автофикс: пример добавления недостающей функции и git коммит ---
 async def auto_fix_and_commit():
-    # Пример — добавим фиктивную функцию (замени на реальные твои шаблоны)
-    func_code = '''
-async def auto_fix_loop(logger):
+    try:
+        # Пример: добавить функцию auto_fix_loop в файл diagnostics если её нет
+        diag_path = Path("check_bot_diagnostics.py")
+        func_code = '''
+async def auto_fix_loop():
     while True:
         logger.info("Автофикс запущен.")
         await asyncio.sleep(3600)
 '''
+        text = diag_path.read_text(encoding="utf-8") if diag_path.exists() else ""
+        if "async def auto_fix_loop" not in text:
+            with open(diag_path, "a", encoding="utf-8") as f:
+                f.write("\n\n" + func_code.strip() + "\n")
+            await send_telegram_message("➕ Добавлена функция auto_fix_loop в check_bot_diagnostics.py")
+        else:
+            await send_telegram_message("ℹ️ Функция auto_fix_loop уже присутствует в check_bot_diagnostics.py")
 
-    added = await add_missing_function(func_code, "async def auto_fix_loop")
-    if added:
-        await send_telegram_message("➕ Добавлена новая функция auto_fix_loop в основной скрипт.")
-    else:
-        await send_telegram_message("ℹ️ Функция auto_fix_loop уже есть в основном скрипте.")
-
-    # Далее делаем git commit и push
-    try:
-        # Переходим в репозиторий
-        proc = subprocess.run(["git", "-C", GIT_REPO_PATH, "add", "."], capture_output=True, text=True)
-        if proc.returncode != 0:
-            await send_telegram_message(f"❌ Git add failed:\n{proc.stderr}")
+        # Git commit & push
+        proc_add = subprocess.run(["git", "-C", str(GIT_REPO_PATH), "add", "."], capture_output=True, text=True)
+        if proc_add.returncode != 0:
+            await send_telegram_message(f"❌ Git add failed:\n{proc_add.stderr}")
             return
 
-        commit_msg = "Автофикс: добавлена missing функция auto_fix_loop"
-        proc = subprocess.run(["git", "-C", GIT_REPO_PATH, "commit", "-m", commit_msg], capture_output=True, text=True)
-        if proc.returncode != 0:
-            if "nothing to commit" in proc.stderr:
+        proc_commit = subprocess.run(
+            ["git", "-C", str(GIT_REPO_PATH), "commit", "-m", "Автофикс: добавлена auto_fix_loop"],
+            capture_output=True, text=True)
+        if proc_commit.returncode != 0:
+            if "nothing to commit" in proc_commit.stderr.lower():
                 await send_telegram_message("ℹ️ Нет новых изменений для коммита.")
             else:
-                await send_telegram_message(f"❌ Git commit failed:\n{proc.stderr}")
+                await send_telegram_message(f"❌ Git commit failed:\n{proc_commit.stderr}")
                 return
 
-        proc = subprocess.run(["git", "-C", GIT_REPO_PATH, "push"], capture_output=True, text=True)
-        if proc.returncode != 0:
-            await send_telegram_message(f"❌ Git push failed:\n{proc.stderr}")
+        proc_push = subprocess.run(["git", "-C", str(GIT_REPO_PATH), "push"], capture_output=True, text=True)
+        if proc_push.returncode != 0:
+            await send_telegram_message(f"❌ Git push failed:\n{proc_push.stderr}")
             return
 
         await send_telegram_message("✅ Изменения успешно запушены в GitHub.")
 
     except Exception as e:
-        await send_telegram_message(f"❌ Ошибка при git операциях: {e}")
+        logger.error(f"Ошибка в auto_fix_and_commit: {e}")
+        await send_telegram_message(f"❌ Ошибка в auto_fix_and_commit: {e}")
+
+# --- Полный цикл анализа и улучшения ---
+async def analyze_and_improve_full():
+    try:
+        log_lines = read_full_log()
+        errors, successes = analyze_log_details(log_lines)
+        script_problems = check_main_script_health()
+
+        report = "<b>Отчёт об анализе Rita Mega Bot</b>\n\n"
+
+        if successes:
+            report += "<b>Успешные действия (последние 10):</b>\n" + "\n".join(successes[-10:]) + "\n\n"
+        else:
+            report += "Нет данных по успешным действиям.\n\n"
+
+        if errors:
+            report += "<b>Ошибки (последние 10):</b>\n" + "\n".join(errors[-10:]) + "\n\n"
+        else:
+            report += "Ошибок не обнаружено.\n\n"
+
+        if script_problems:
+            report += "<b>Проблемы с основным скриптом:</b>\n" + "\n".join(script_problems) + "\n\n"
+        else:
+            report += "Проблем не обнаружено.\n\n"
+
+        await send_telegram_message(report)
+
+        await auto_fix_and_commit()
+
+        logger.info("✅ Цикл анализа и улучшения завершён.")
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка в analyze_and_improve_full: {e}")
+
+# --- Фоновая задача для периодического запуска ---
+async def background_auto_fix_loop():
+    while True:
+        try:
+            await analyze_and_improve_full()
+        except Exception as e:
+            logger.error(f"Ошибка в background_auto_fix_loop: {e}")
+        await asyncio.sleep(300)  # каждые 5 минут
+
+# В main async функцию твоего check_bot_diagnostics.py добавь запуск:
+# asyncio.create_task(background_auto_fix_loop())
+
+
+
+
+
+
+
+
+
 
 # Основная функция автоанализа и улучшения
 async def run_intelligent_auto_improve():
@@ -3302,6 +3678,15 @@ from telegram.ext import (
     ContextTypes,
 )
 from telegram.error import Conflict
+from pathlib import Path
+os.makedirs('logs', exist_ok=True)  # Create logs dir if missing
+
+def safe_exists(path):
+    if isinstance(path, str):
+        path = Path(path)
+    return path.exists()
+
+
 
 # --- ТВОИ НАСТРОЙКИ ---
 TELEGRAM_BOT_TOKEN = "7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4"
@@ -3376,6 +3761,10 @@ async def main_entry():
     await run_bot()
 
 if __name__ == "__main__":
+    import nest_asyncio
+    import signal
+    import asyncio
+
     nest_asyncio.apply()
     loop = asyncio.get_event_loop()
 
@@ -3386,7 +3775,7 @@ if __name__ == "__main__":
             pass
 
     try:
-        loop.run_until_complete(main_entry())
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         logger.warning("⛔ Бот остановлен вручную (Ctrl+C)")
     except Exception as e:

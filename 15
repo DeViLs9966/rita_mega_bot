@@ -1,0 +1,35 @@
+import os
+import re
+
+BOT_DIR = os.path.expanduser("~/rita_mega_bot")
+LOGS_DIR = os.path.join(BOT_DIR, "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+FILES = ["rita_main.py", "check_bot_diagnostics.py"]
+OLD_LOG_PATHS = [
+    r'/mnt/data/rita_mega_bot/logs',
+    r'/data/data/com.termux/files/home/rita_mega_bot/logs',
+]
+
+NEW_LOG_PATH = "./logs"
+
+def replace_log_paths(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    new_content = content
+    for old_path in OLD_LOG_PATHS:
+        new_content = re.sub(re.escape(old_path), NEW_LOG_PATH, new_content)
+    if new_content != content:
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        print(f"[+] Лог-пути в {file_path} изменены на '{NEW_LOG_PATH}'")
+    else:
+        print(f"[-] В {file_path} не найдено устаревших лог-путей")
+
+if __name__ == "__main__":
+    for fname in FILES:
+        fpath = os.path.join(BOT_DIR, fname)
+        if os.path.isfile(fpath):
+            replace_log_paths(fpath)
+        else:
+            print(f"[!] Файл не найден: {fpath}")

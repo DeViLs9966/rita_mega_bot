@@ -1,0 +1,124 @@
+import asyncio
+import os
+import re
+import subprocess
+from pathlib import Path
+
+# Конфигурация
+GIT_REPO_PATH = Path(__file__).parent.resolve()
+MAIN_SCRIPT_PATH = GIT_REPO_PATH / "rita_main.py"
+HELPER_SCRIPT_PATH = GIT_REPO_PATH / "check_bot_diagnostics.py"
+OWNER_ID = 558079551  # Админ Telegram ID
+
+async def send_telegram_message(bot, chat_id, text):
+    # Простая отправка, ожидает бот и чат айди
+    try:
+        await bot.send_message(chat_id, text, parse_mode="HTML")
+    except Exception as e:
+        print(f"Ошибка при отправке сообщения: {e}")
+
+def fix_send_admin_message_function(file_path):
+    """
+    Находит функцию отправки сообщений админу и исправляет её так,
+    чтобы она принимала и использовала только строки, без .name у строки.
+    """
+    content = file_path.read_text(encoding="utf-8")
+
+    pattern = re.compile(r"(async def send_admin_message.*?:)(.*?)(?=async def|$)", re.S)
+    match = pattern.search(content)
+    if not match:
+        print(f"[WARN] Функция send_admin_message не найдена в {file_path.name}")
+        return False
+
+    func_code = match.group(0)
+
+    # Пример исправленной функции (можно адаптировать под твой стиль)
+    fixed_code = '''
+async def send_admin_message(bot, chat_id, text_or_path):
+    try:
+        if isinstance(text_or_path, str):
+            message = text_or_path
+        else:
+            # предполагается Path или подобный объект
+            with open(text_or_path, "r", encoding="utf-8") as f:
+                message = f.read()
+        await bot.send_message(chat_id, message, parse_mode="HTML")
+    except Exception as e:
+        import logging
+        logging.error(f"Ошибка отправки сообщения админу: {e}")
+'''.strip('\n')
+
+    if func_code.strip() == fixed_code.strip():
+        print(f"[INFO] send_admin_message в {file_path.name} уже исправлена.")
+        return False
+
+    # Заменяем
+    new_content = content.replace(func_code, fixed_code)
+    file_path.write_text(new_content, encoding="utf-8")
+    print(f"[FIXED] send_admin_message функция в {file_path.name} исправлена.")
+    return True
+
+def ensure_asyncio_run_main(file_path):
+    """
+    Проверяет, что в конце файла есть:
+    if __name__ == '__main__':
+        import asyncio
+        asyncio.run(main())
+    Если нет - добавляет.
+    """
+    content = file_path.read_text(encoding="utf-8")
+    if "asyncio.run(main())" in content:
+        print(f"[INFO] asyncio.run(main()) уже присутствует в {file_path.name}")
+        return False
+
+    add_code = '''
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
+'''.lstrip('\n')
+
+    file_path.write_text(content + add_code, encoding="utf-8")
+    print(f"[FIXED] Добавлен asyncio.run(main()) в {file_path.name}")
+    return True
+
+def git_commit_and_push(message):
+    try:
+        subprocess.run(["git", "-C", str(GIT_REPO_PATH), "add", "."], check=True)
+        result = subprocess.run(
+            ["git", "-C", str(GIT_REPO_PATH), "commit", "-m", message],
+            capture_output=True,
+            text=True,
+        )
+        if "nothing to commit" in result.stdout.lower():
+            print("[INFO] Нет изменений для коммита.")
+        else:
+            print("[INFO] Коммит создан.")
+            subprocess.run(["git", "-C", str(GIT_REPO_PATH), "push"], check=True)
+            print("[INFO] Изменения запушены на GitHub.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"[ERROR] Git error: {e}")
+        return False
+
+async def main():
+    fixed_any = False
+
+    fixed_any |= fix_send_admin_message_function(MAIN_SCRIPT_PATH)
+    fixed_any |= fix_send_admin_message_function(HELPER_SCRIPT_PATH)
+
+    fixed_any |= ensure_asyncio_run_main(MAIN_SCRIPT_PATH)
+
+    if fixed_any:
+        print("[INFO] Делается коммит и пуш исправлений...")
+        git_commit_and_push("Автофикс: исправлена отправка сообщений и запуск main()")
+
+        # Тут можно попробовать перезапустить rita_main.py
+        print("[INFO] Запускаем rita_main.py через asyncio.run(main())...")
+        # Запуск зависит от архитектуры, можно предложить просто лог или systemctl restart если есть
+
+    else:
+        print("[INFO] Исправления не требовались.")
+
+if __name__ == "__main__":
+    asyncio.run(main())
