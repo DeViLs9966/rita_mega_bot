@@ -4649,68 +4649,48 @@ import asyncio
 import signal
 import sys
 import os
+import time
 
-nest_asyncio.apply()
-loop = asyncio.get_event_loop()
+shutdown_requested = False
+last_signal_time = 0
 
 def restart_program():
     python = sys.executable
     os.execv(python, [python] + sys.argv)
 
-def stop_program():
-    logger.info("🛑 Завершение работы...")
-
-    for task in asyncio.all_tasks():
-        task.cancel()
-
+async def safe_update_and_restart():
     try:
-        loop.run_until_complete(asyncio.sleep(0.1))
-    except asyncio.CancelledError:
-        pass
+        logger.info("🔄 Обновление перед перезапуском...")
+        await update_self()  # твоя функция обновления
+    except Exception as e:
+        logger.warning(f"⚠️ Ошибка обновления перед рестартом: {e}")
     finally:
-        sys.exit(0)
+        logger.info("♻️ Перезапуск скрипта...")
+        restart_program()
 
 def signal_handler(sig, frame):
-    if sig == signal.SIGINT:
-        logger.info("🚪 [Ctrl+C] Остановка.")
-        stop_program()
-
-signal.signal(signal.SIGINT, signal_handler)
-
-async def wait_for_manual_restart():
-    logger.info("⏳ Ожидание команды... (v = обновить, q = выйти)")
-    while True:
-        try:
-            inp = await loop.run_in_executor(None, sys.stdin.readline)
-            cmd = inp.strip().lower()
-
-            if cmd == "v":
-                logger.info("🔁 Обновление и перезапуск...")
-                try:
-                    await update_self()  # твоя функция обновления
-                except Exception as e:
-                    logger.warning(f"⚠️ Ошибка обновления: {e}")
-                restart_program()
-
-            elif cmd == "q":
-                logger.info("🛑 Завершение по команде.")
-                stop_program()
-
-        except asyncio.CancelledError:
-            break  # остановка цикла при отмене задачи
-
-async def main_wrapper():
-    await asyncio.gather(
-        main(),  # твоя основная логика
-        wait_for_manual_restart(),
-        return_exceptions=True  # предотвращает падение при cancel
-    )
+    global shutdown_requested, last_signal_time
+    now = time.time()
+    if shutdown_requested and now - last_signal_time < 3:
+        logger.info("🛑 Повторный Ctrl+C — полный выход.")
+        sys.exit(0)
+    else:
+        shutdown_requested = True
+        last_signal_time = now
+        logger.info("⚠️ Нажми Ctrl+C снова в течение 3 секунд для выхода.")
+        asyncio.ensure_future(safe_update_and_restart())
 
 if __name__ == "__main__":
+    nest_asyncio.apply()
+    loop = asyncio.get_event_loop()
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     try:
-        loop.run_until_complete(main_wrapper())
+        loop.run_until_complete(main())
     except Exception as e:
-        logger.error(f"❌ Фатальная ошибка: {e}")
+        logger.error(f"❌ Критическая ошибка: {e}")
     finally:
         if not loop.is_closed():
             loop.close()
