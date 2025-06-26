@@ -1,3 +1,4 @@
+
 from telegram.ext import Application
 from auto_fix_tools import run_auto_fix_analysis
 import sys
@@ -4661,6 +4662,8 @@ async def main():
 
 
 
+
+
 import nest_asyncio
 import asyncio
 import signal
@@ -4672,8 +4675,8 @@ import threading
 
 from telegram.ext import Application
 
-# --- Импорты вашего проекта ---
-# from utils import update_self, auto_fix_from_logs, auto_backup_and_push, auto_fix_loop, ...
+# --- Все нужные импорты предполагаются ---
+# from utils import update_self, auto_fix_from_logs, ...
 # from config import TELEGRAM_BOT_TOKEN
 # from handlers import register_auxiliary_handlers
 # from monitor import start_monitoring_thread
@@ -4684,45 +4687,51 @@ logging.basicConfig(level=logging.INFO)
 
 shutdown_requested = False
 last_signal_time = 0
-app_instance = None  # глобально, чтобы остановить
+app_instance = None
+loop = None
 
 def restart_program():
     python = sys.executable
     os.execv(python, [python] + sys.argv)
 
 async def safe_update_and_restart():
+    global app_instance
     try:
         logger.info("🔄 Обновление перед перезапуском...")
         await update_self()
+        if app_instance:
+            logger.info("🛑 Останавливаем Telegram-приложение перед рестартом...")
+            await app_instance.stop()
     except Exception as e:
         logger.warning(f"⚠️ Ошибка обновления перед рестартом: {e}")
     finally:
-        if app_instance:
-            logger.info("🛑 Завершение Telegram-приложения перед рестартом...")
-            await app_instance.stop()
         logger.info("♻️ Перезапуск скрипта...")
         restart_program()
 
 def signal_handler_sigint(sig, frame):
-    global shutdown_requested, last_signal_time
-    now = time.time()
-    if shutdown_requested and now - last_signal_time < 3:
-        logger.info("🛑 Повторный Ctrl+C — завершение.")
-        sys.exit(0)
-    else:
-        shutdown_requested = True
-        last_signal_time = now
-        logger.info("⚠️ Нажми Ctrl+C снова в течение 3 секунд для выхода.")
-        # Не перезапускаем сразу — только второй Ctrl+C
+    logger.info("🚪 Завершение по Ctrl+C...")
+    if loop and loop.is_running():
+        loop.call_soon_threadsafe(loop.stop)
 
 def console_input_listener():
+    global shutdown_requested, last_signal_time, loop
     while True:
-        user_input = input().strip().lower()
-        if user_input == "v":
-            logger.info("🧠 Обнаружено: v + Enter → запускаем обновление и перезапуск...")
-            asyncio.run(safe_update_and_restart())
+        try:
+            line = sys.stdin.readline().strip().lower()
+            if line == "v":
+                now = time.time()
+                if shutdown_requested and now - last_signal_time < 3:
+                    logger.info("🛑 Повторный 'v' — полный выход.")
+                    os._exit(0)
+                else:
+                    shutdown_requested = True
+                    last_signal_time = now
+                    logger.info("⚠️ Введена команда 'v' — сохраняем и рестартуем.")
+                    if loop:
+                        asyncio.run_coroutine_threadsafe(safe_update_and_restart(), loop)
+        except Exception:
+            pass
 
-# --- Основная логика бота ---
 async def main_entry():
     global app_instance
 
@@ -4739,8 +4748,7 @@ async def main_entry():
 
     try:
         with open("rita_main.py", "r", encoding="utf-8") as f:
-            code_text = f.read()
-            run_auto_fix_analysis(code_text)
+            run_auto_fix_analysis(f.read())
     except Exception as e:
         logger.warning(f"⚠️ Не удалось прочитать rita_main.py: {e}")
 
@@ -4754,8 +4762,8 @@ async def main_entry():
 
     try:
         await app.run_polling()
-    finally:
-        logger.info("🧹 Telegram-приложение завершено.")
+    except asyncio.CancelledError:
+        logger.info("🛑 Прерывание polling")
 
 # --- Точка входа ---
 if __name__ == "__main__":
@@ -4769,6 +4777,8 @@ if __name__ == "__main__":
 
     try:
         loop.run_until_complete(main_entry())
+    except KeyboardInterrupt:
+        logger.info("🛑 KeyboardInterrupt получен")
     except Exception as e:
         if "Cannot close a running event loop" in str(e):
             logger.warning("⚠️ Игнорируем: Cannot close a running event loop")
