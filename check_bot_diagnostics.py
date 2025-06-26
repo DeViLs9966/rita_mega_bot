@@ -1,4 +1,4 @@
-
+from telegram.ext import Application
 from auto_fix_tools import run_auto_fix_analysis
 import sys
 import os
