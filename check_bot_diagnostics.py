@@ -4612,12 +4612,6 @@ async def main_entry():
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
 
     register_auxiliary_handlers(app)  # если есть хендлеры
-    await app.initialize()
-    await app.start()
-    await app.updater.start_polling()
-    await app.updater.idle()
-    await app.stop()
-    await app.shutdown()
     await app.run_polling()
 
 
