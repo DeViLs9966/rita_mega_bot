@@ -4693,9 +4693,9 @@ def signal_handler(sig, frame):
 
 
 if __name__ == "__main__":
-    import nest_asyncio
     import asyncio
     import signal
+    import nest_asyncio
     import logging
 
     nest_asyncio.apply()
@@ -4705,15 +4705,16 @@ if __name__ == "__main__":
         try:
             loop.add_signal_handler(sig, loop.stop)
         except NotImplementedError:
-            pass
+            pass  # Не все платформы поддерживают сигнал
 
     try:
         loop.run_until_complete(main())  # или main_wrapper()
     except KeyboardInterrupt:
         logging.info("🚪 Завершение по Ctrl+C")
     except Exception as e:
-        logging.error(f"❌ Критическая ошибка: {e}")
+        if "Cannot close a running event loop" in str(e):
+            logging.warning("⚠️ Игнорируем: Cannot close a running event loop")
+        else:
+            logging.error(f"❌ Критическая ошибка: {e}")
     finally:
-        # ❌ Не закрываем loop вручную — это и вызывает ошибку
-        pass
-
+        pass  # Не вызываем loop.close() — это важно
