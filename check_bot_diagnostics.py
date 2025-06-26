@@ -4489,9 +4489,10 @@ async def auto_fix_from_logs():
 async def run_bot():
     try:
         app = (
-            ApplicationBuilder()
+            Application.builder()
             .token(TELEGRAM_BOT_TOKEN)
             .concurrent_updates(True)
+            .close_loop(False)  # <--- важный параметр, чтобы избежать ошибки
             .build()
         )
         register_auxiliary_handlers(app)
@@ -4517,7 +4518,12 @@ async def run_bot():
 
 
 
+import asyncio
+import sys
+import logging
+from telegram.ext import Application
 
+# Предполагаем, что TELEGRAM_BOT_TOKEN и logger уже определены ранее
 
 # --- Основная логика запуска ---
 async def main_entry():
@@ -4540,10 +4546,22 @@ async def main_entry():
     await run_intelligent_auto_improve()
 
     logger.info("🚀 Запуск Telegram-бота...")
-    await run_bot()
+
+    # ✅ Используем Application.builder с close_loop(False)
+    app = Application.builder().token(TELEGRAM_BOT_TOKEN).close_loop(False).build()
+
+    # 🔄 Добавляем обработчики (если есть)
+    # app.add_handler(...)  # <-- если есть хендлеры
+
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling()
+    await app.updater.idle()
+    await app.stop()
+    await app.shutdown()
 
 
-# --- Безопасное завершение всех фоновых задач ---
+# --- Завершение всех задач ---
 async def shutdown():
     logger.info("🛑 Завершение: отмена всех фоновых задач...")
     tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
@@ -4552,17 +4570,22 @@ async def shutdown():
     await asyncio.gather(*tasks, return_exceptions=True)
 
 
-# --- Обёртка над main_entry() с защитой и shutdown ---
+# --- Обёртка с защитой ---
 async def main():
+    log_info("🚀 Запуск скрипта диагностики RITA AI")
+    if not TELEGRAM_BOT_TOKEN:
+        log_error("❌ TELEGRAM_BOT_TOKEN не задан. Прекращение работы.")
+        sys.exit(1)
+
     try:
         await main_entry()
     except Exception as e:
-        logger.error(f"❌ Критическая ошибка: {e}")
+        logger.error(f"❌ Ошибка запуска бота: {e}")
     finally:
         await shutdown()
 
 
-# --- Точка запуска ---
+# --- Точка входа ---
 if __name__ == "__main__":
     try:
         asyncio.run(main())
@@ -4570,6 +4593,7 @@ if __name__ == "__main__":
         logger.info("🚪 Завершение по Ctrl+C")
     except Exception as e:
         logger.error(f"❌ Фатальная ошибка: {e}")
+
 
 
 
