@@ -4643,15 +4643,22 @@ async def main():
 
 
 # --- Точка входа ---
+# --- Точка входа ---
 if __name__ == "__main__":
     try:
         asyncio.run(main())
+    except RuntimeError as e:
+        if "Cannot close a running event loop" in str(e):
+            import nest_asyncio
+            nest_asyncio.apply()
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(main())
+        else:
+            raise
     except KeyboardInterrupt:
         logger.info("🚪 Завершение по Ctrl+C")
     except Exception as e:
         logger.error(f"❌ Фатальная ошибка: {e}")
-
-
 
 
 
