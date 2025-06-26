@@ -4647,25 +4647,50 @@ async def main():
 import nest_asyncio
 import asyncio
 import signal
+import sys
+import os
+import time
+
+shutdown_requested = False
+last_signal_time = 0
+
+def restart_program():
+    python = sys.executable
+    os.execv(python, [python] + sys.argv)
+
+async def safe_update_and_restart():
+    try:
+        logger.info("🔄 Обновление перед перезапуском...")
+        await update_self()  # твоя функция обновления
+    except Exception as e:
+        logger.warning(f"⚠️ Ошибка обновления перед рестартом: {e}")
+    finally:
+        logger.info("♻️ Перезапуск скрипта...")
+        restart_program()
+
+def signal_handler(sig, frame):
+    global shutdown_requested, last_signal_time
+    now = time.time()
+    if shutdown_requested and now - last_signal_time < 3:
+        logger.info("🛑 Повторный Ctrl+C — полный выход.")
+        sys.exit(0)
+    else:
+        shutdown_requested = True
+        last_signal_time = now
+        logger.info("⚠️ Нажми Ctrl+C снова в течение 3 секунд для выхода.")
+        asyncio.ensure_future(safe_update_and_restart())
 
 if __name__ == "__main__":
-    nest_asyncio.apply()  # ⬅️ Позволяет переиспользовать loop
-
+    nest_asyncio.apply()
     loop = asyncio.get_event_loop()
 
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        try:
-            loop.add_signal_handler(sig, loop.stop)
-        except NotImplementedError:
-            pass  # например, для Windows или Termux
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     try:
-        loop.run_until_complete(main())  # ✅ запускаем main без ошибок
-    except KeyboardInterrupt:
-        logger.info("🚪 Завершение по Ctrl+C")
+        loop.run_until_complete(main())
     except Exception as e:
         logger.error(f"❌ Критическая ошибка: {e}")
     finally:
         if not loop.is_closed():
             loop.close()
-
