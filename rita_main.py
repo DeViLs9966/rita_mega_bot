@@ -52,7 +52,7 @@ check_already_running()
 import atexit
 atexit.register(remove_lock_file)
     Фоновая задача, которая регулярно проверяет лог файл на ошибки,
-    и при обнаружении — вызывает обработчик для генерации исправлений.
+    и при обнаружении  вызывает обработчик для генерации исправлений.
     log_file_path = "safe_path_join(logs, rita_bot.log")  # Путь к файлу логов — укажи свой актуальный
             with open(log_file_path, "r", encoding="utf-8") as log_file:
                 logs = log_file.read() 
@@ -381,6 +381,15 @@ if __name__ == "__main__":
             pass
     try:
         loop.run_until_complete(main())
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
 
 
 if __name__ == '__main__':

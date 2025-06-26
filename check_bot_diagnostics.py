@@ -4524,14 +4524,16 @@ async def main_entry():
     asyncio.create_task(auto_fix_loop(logger))
     asyncio.create_task(auto_fix_and_restart_if_needed())
     start_monitoring_thread()
-    run_auto_fix_analysis(your_log_text)
+
+    with open("rita_main.py", "r", encoding="utf-8") as f:
+        your_log_text = f.read()
+        run_auto_fix_analysis(your_log_text)
+
     logger.info("🤖 Запуск интеллектуального автоулучшения...")
     await run_intelligent_auto_improve()
 
     logger.info("🚀 Запуск Telegram-бота...")
     await run_bot()
-
-
 
 
 
