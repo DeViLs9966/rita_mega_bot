@@ -4531,14 +4531,6 @@ async def main_entry():
     logger.info("🚀 Запуск Telegram-бота...")
     await run_bot()
 
-
-
-
-
-
-
-
-
 # --- Точка входа ---
 if __name__ == "__main__":
     nest_asyncio.apply()
@@ -4553,13 +4545,12 @@ if __name__ == "__main__":
     try:
         loop.run_until_complete(main_entry())
     except KeyboardInterrupt:
-        logger.info("🚪 Завершение по Ctrl+C")
+        logger.warning("⛔ Бот остановлен вручную (Ctrl+C)")
     except Exception as e:
         logger.error(f"❌ Критическая ошибка: {e}")
     finally:
         if not loop.is_closed():
             loop.close()
-
 
 
 
