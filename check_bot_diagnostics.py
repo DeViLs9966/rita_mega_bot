@@ -4673,13 +4673,20 @@ import threading
 
 from telegram.ext import Application
 
+# --- Все нужные импорты предполагаются ---
+# from utils import update_self, auto_fix_from_logs, ...
+# from config import TELEGRAM_BOT_TOKEN
+# from handlers import register_auxiliary_handlers
+# from monitor import start_monitoring_thread
+# from logger_setup import logger
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 shutdown_requested = False
 last_signal_time = 0
 app_instance = None
-loop = None  # Глобальная ссылка на event loop
+loop = None
 
 def restart_program():
     python = sys.executable
@@ -4700,24 +4707,28 @@ async def safe_update_and_restart():
         restart_program()
 
 def signal_handler_sigint(sig, frame):
-    logger.info("🚪 Получен SIGINT (Ctrl+C), корректное завершение.")
-    sys.exit(0)
+    logger.info("🚪 Завершение по Ctrl+C...")
+    if loop and loop.is_running():
+        loop.call_soon_threadsafe(loop.stop)
 
 def console_input_listener():
     global shutdown_requested, last_signal_time, loop
     while True:
-        line = sys.stdin.readline().strip().lower()
-        if line == "v":
-            now = time.time()
-            if shutdown_requested and now - last_signal_time < 3:
-                logger.info("🛑 Повторный 'v' — полный выход.")
-                os._exit(0)
-            else:
-                shutdown_requested = True
-                last_signal_time = now
-                logger.info("⚠️ Введена команда 'v' — сохраняем и рестартуем.")
-                if loop:
-                    asyncio.run_coroutine_threadsafe(safe_update_and_restart(), loop)
+        try:
+            line = sys.stdin.readline().strip().lower()
+            if line == "v":
+                now = time.time()
+                if shutdown_requested and now - last_signal_time < 3:
+                    logger.info("🛑 Повторный 'v' — полный выход.")
+                    os._exit(0)
+                else:
+                    shutdown_requested = True
+                    last_signal_time = now
+                    logger.info("⚠️ Введена команда 'v' — сохраняем и рестартуем.")
+                    if loop:
+                        asyncio.run_coroutine_threadsafe(safe_update_and_restart(), loop)
+        except Exception:
+            pass
 
 async def main_entry():
     global app_instance
@@ -4735,8 +4746,7 @@ async def main_entry():
 
     try:
         with open("rita_main.py", "r", encoding="utf-8") as f:
-            code_text = f.read()
-            run_auto_fix_analysis(code_text)
+            run_auto_fix_analysis(f.read())
     except Exception as e:
         logger.warning(f"⚠️ Не удалось прочитать rita_main.py: {e}")
 
@@ -4746,22 +4756,27 @@ async def main_entry():
     logger.info("🤖 Запуск Telegram-бота...")
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
     app_instance = app
-
     register_auxiliary_handlers(app)
 
-    await app.run_polling()
+    try:
+        await app.run_polling()
+    except asyncio.CancelledError:
+        logger.info("🛑 Прерывание polling")
 
+# --- Точка входа ---
 if __name__ == "__main__":
     nest_asyncio.apply()
     loop = asyncio.get_event_loop()
 
     signal.signal(signal.SIGINT, signal_handler_sigint)
+    signal.signal(signal.SIGTERM, signal_handler_sigint)
 
-    # Запускаем отдельный поток для чтения строк из консоли
     threading.Thread(target=console_input_listener, daemon=True).start()
 
     try:
         loop.run_until_complete(main_entry())
+    except KeyboardInterrupt:
+        logger.info("🛑 KeyboardInterrupt получен")
     except Exception as e:
         if "Cannot close a running event loop" in str(e):
             logger.warning("⚠️ Игнорируем: Cannot close a running event loop")
