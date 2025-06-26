@@ -548,7 +548,7 @@ async def pro_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет, админ! Это safe_path_join(команда, pro).")
     # Здесь можно добавить автообновление или диагностику
 async def main():
-    application = ApplicationBuilder().token(TELEGRAM_TOKEN).close_loop(False).build()
+    application = Application.builder().token(TELEGRAM_TOKEN).close_loop(False).build()
     asyncio.create_task(background_auto_fix_loop())
     application.add_handler(CommandHandler("start", process_message))
     application.add_handler(CommandHandler("gpt4", process_message))
@@ -2105,7 +2105,7 @@ async def main():
         sys.exit(1)
 
     app = (
-        ApplicationBuilder()
+        Application.builder()
         .token(TELEGRAM_BOT_TOKEN)
         .concurrent_updates(True)
         .close_loop(False)
@@ -3342,7 +3342,7 @@ async def send_telegram_message(text, app=None):
     try:
         if app is None:
             app = (
-                ApplicationBuilder()
+                Application.builder()
                 .token(TELEGRAM_BOT_TOKEN)
                 .concurrent_updates(True)
                 .close_loop(False)
@@ -4543,7 +4543,7 @@ async def run_bot():
     try:
         # ✅ Создаём Telegram-бота с правильными параметрами
         app = (
-            ApplicationBuilder()
+            Application.builder()
             .token(TELEGRAM_BOT_TOKEN)
             .concurrent_updates(True)
             .close_loop(False)
@@ -4581,6 +4581,10 @@ from telegram.ext import Application
 # Предполагаем, что TELEGRAM_BOT_TOKEN и logger уже определены ранее
 
 # --- Основная логика запуска ---
+
+
+from telegram.ext import Application  # убедись, что импорт есть
+
 async def main_entry():
     logger.info("🚀 Старт автофикса из логов...")
     await auto_fix_from_logs()
@@ -4602,18 +4606,19 @@ async def main_entry():
 
     logger.info("🚀 Запуск Telegram-бота...")
 
-    # ✅ Используем ApplicationBuilder с close_loop(False)
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).close_loop(False).build()
+    app = (
+        Application.builder()
+        .token(TELEGRAM_BOT_TOKEN)
+        .concurrent_updates(True)
+        .build()
+    )
 
-    # 🔄 Добавляем обработчики (если есть)
-    # app.add_handler(...)  # <-- если есть хендлеры
+    # Пример: подключение обработчиков команд
+    # app.add_handler(CommandHandler("start", start_handler))
+    # app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
 
-    await app.initialize()
-    await app.start()
-    await app.updater.start_polling()
-    await app.updater.idle()
-    await app.stop()
-    await app.shutdown()
+    # ⬇️ Правильный запуск бота
+    await app.run_polling()
 
 
 # --- Завершение всех задач ---
