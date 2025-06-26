@@ -1,0 +1,24 @@
+import re
+import sys
+
+def patch_main_wrapper_no_backup(filename):
+    try:
+        with open(filename, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        new_content = re.sub(r'\bmain_wrapper\s*', 'main()', content)
+
+        if content != new_content:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(new_content)
+            print(f"[FIX] Заменён вызов main_wrapper() на main() в '{filename}'")
+        else:
+            print(f"[INFO] Замен не требуется — main_wrapper() не найден в '{filename}'")
+    except Exception as e:
+        print(f"[ERROR] Ошибка при патче: {e}")
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("❌ Укажи путь к файлу, пример: python3 patch_main_direct.py check_bot_diagnostics.py")
+    else:
+        patch_main_wrapper_no_backup(sys.argv[1])
