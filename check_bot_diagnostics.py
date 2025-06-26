@@ -548,7 +548,7 @@ async def pro_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет, админ! Это safe_path_join(команда, pro).")
     # Здесь можно добавить автообновление или диагностику
 async def main():
-    application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+    application = Application.builder().token(TELEGRAM_TOKEN).close_loop(False).build()
     asyncio.create_task(background_auto_fix_loop())
     application.add_handler(CommandHandler("start", process_message))
     application.add_handler(CommandHandler("gpt4", process_message))
