@@ -1,0 +1,44 @@
+import sys
+import re
+
+def patch_file(filename):
+    with open(filename, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    patched_lines = []
+    skip_next_idle = False
+    for i, line in enumerate(lines):
+        # Закомментировать .close_loop
+        if ".close_loop" in line:
+            if not line.lstrip().startswith("#"):
+                patched_lines.append("# " + line)
+                continue
+
+        # Заменить await app.updater.start_polling() на await app.run_polling()
+        if "await app.updater.start_polling()" in line:
+            patched_lines.append(line.replace("await app.updater.start_polling()", "await app.run_polling()"))
+            continue
+
+        # Убрать await app.updater.idle()
+        if "await app.updater.idle()" in line:
+            # пропускаем эту строку — не добавляем
+            continue
+
+        # Иногда может быть await app.updater.stop(), await app.updater.shutdown() — лучше тоже убрать
+        if "await app.updater.stop()" in line or "await app.updater.shutdown()" in line:
+            continue
+
+        # Остальное оставляем без изменений
+        patched_lines.append(line)
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.writelines(patched_lines)
+
+    print(f"[INFO] Файл '{filename}' успешно пропатчен.")
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Использование: python apply_patch.py <имя_файла>")
+        sys.exit(1)
+
+    patch_file(sys.argv[1])

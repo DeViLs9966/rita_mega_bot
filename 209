@@ -1,0 +1,35 @@
+import re
+
+def check_errors_in_file(filename):
+    error_patterns = {
+        "close_loop": re.compile(r'\.close_loop'),
+        "updater_idle": re.compile(r'\.updater\.idle'),
+        "await_shutdown": re.compile(r'await\s+app\.shutdown'),
+        "await_initialize_start_polling": re.compile(r'await\s+app\.(initialize|start|updater\.start_polling)'),
+        "updater_attribute": re.compile(r'app\.updater'),
+    }
+
+    errors_found = []
+
+    with open(filename, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    for i, line in enumerate(lines, 1):
+        for err_name, pattern in error_patterns.items():
+            if pattern.search(line):
+                errors_found.append((i, err_name, line.strip()))
+
+    if not errors_found:
+        print(f"[INFO] В файле '{filename}' ошибок не обнаружено.")
+    else:
+        print(f"[WARNING] В файле '{filename}' обнаружены потенциальные ошибки:")
+        for lineno, err_name, text in errors_found:
+            print(f"  Строка {lineno}: [{err_name}] {text}")
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) < 2:
+        print("Использование: python check_patch.py <путь_к_файлу>")
+        sys.exit(1)
+
+    check_errors_in_file(sys.argv[1])

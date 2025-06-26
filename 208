@@ -1,0 +1,5 @@
+import re
+
+def check_errors_in_file(filename):
+    error_patterns = {
+        "close_loop": re.compile(r'\.close_loop)
