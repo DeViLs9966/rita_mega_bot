@@ -4658,46 +4658,59 @@ def restart_program():
     os.execv(python, [python] + sys.argv)
 
 def stop_program():
-    logger.info("🛑 Скрипт завершён пользователем.")
-    for task in asyncio.all_tasks(loop):
+    logger.info("🛑 Завершение работы...")
+
+    for task in asyncio.all_tasks():
         task.cancel()
+
     try:
         loop.run_until_complete(asyncio.sleep(0.1))
-    except:
+    except asyncio.CancelledError:
         pass
-    sys.exit(0)
+    finally:
+        sys.exit(0)
 
 def signal_handler(sig, frame):
     if sig == signal.SIGINT:
-        logger.info("🛑 [Ctrl+C] — Завершение работы.")
+        logger.info("🚪 [Ctrl+C] Остановка.")
         stop_program()
 
 signal.signal(signal.SIGINT, signal_handler)
 
 async def wait_for_manual_restart():
-    logger.info("🔁 Нажми 'v' и Enter для обновления и рестарта, либо Ctrl+C для выхода.")
+    logger.info("⏳ Ожидание команды... (v = обновить, q = выйти)")
     while True:
-        inp = await loop.run_in_executor(None, sys.stdin.readline)
-        if inp.strip().lower() == "v":
-            logger.info("🔄 Обновление и перезапуск скрипта...")
-            try:
-                await update_self()  # твоя логика
-            except Exception as e:
-                logger.warning(f"⚠️ Ошибка при обновлении: {e}")
-            restart_program()
+        try:
+            inp = await loop.run_in_executor(None, sys.stdin.readline)
+            cmd = inp.strip().lower()
+
+            if cmd == "v":
+                logger.info("🔁 Обновление и перезапуск...")
+                try:
+                    await update_self()  # твоя функция обновления
+                except Exception as e:
+                    logger.warning(f"⚠️ Ошибка обновления: {e}")
+                restart_program()
+
+            elif cmd == "q":
+                logger.info("🛑 Завершение по команде.")
+                stop_program()
+
+        except asyncio.CancelledError:
+            break  # остановка цикла при отмене задачи
 
 async def main_wrapper():
     await asyncio.gather(
         main(),  # твоя основная логика
         wait_for_manual_restart(),
-        return_exceptions=True  # 🔑 предотвращает падение из-за CancelledError
+        return_exceptions=True  # предотвращает падение при cancel
     )
 
 if __name__ == "__main__":
     try:
         loop.run_until_complete(main_wrapper())
     except Exception as e:
-        logger.error(f"❌ Критическая ошибка: {e}")
+        logger.error(f"❌ Фатальная ошибка: {e}")
     finally:
         if not loop.is_closed():
             loop.close()
