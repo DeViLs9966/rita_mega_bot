@@ -4672,20 +4672,17 @@ import sys
 import os
 import time
 import logging
-
 from telegram.ext import Application
-# Предполагается, что все нужные импорты уже сделаны, включая:
-# - update_self
-# - auto_fix_from_logs
-# - auto_backup_and_push
-# - auto_fix_loop
-# - auto_fix_and_restart_if_needed
-# - run_auto_fix_analysis
-# - run_intelligent_auto_improve
-# - register_auxiliary_handlers
-# - TELEGRAM_BOT_TOKEN
-# - start_monitoring_thread
-# - logger
+
+# --- Предполагается, что всё ниже уже импортировано в твоём проекте ---
+# from utils import update_self, auto_fix_from_logs, auto_backup_and_push, auto_fix_loop, ...
+# from config import TELEGRAM_BOT_TOKEN
+# from handlers import register_auxiliary_handlers
+# from monitor import start_monitoring_thread
+# from logger_setup import logger
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 shutdown_requested = False
 last_signal_time = 0
@@ -4716,26 +4713,31 @@ def signal_handler(sig, frame):
         logger.info("⚠️ Нажми Ctrl+C снова в течение 3 секунд для выхода.")
         asyncio.ensure_future(safe_update_and_restart())
 
+# --- Основная логика бота ---
 async def main_entry():
     logger.info("🚀 Старт автофикса из логов...")
     await auto_fix_from_logs()
 
-    logger.info("💾 Выполнение резервного копирования и пуша в GitHub...")
+    logger.info("💾 Резервное копирование и GitHub push...")
     await auto_backup_and_push()
 
-    logger.info("🔧 Запуск фоновых задач автофикса...")
+    logger.info("🔧 Запуск фоновых задач...")
     asyncio.create_task(auto_fix_loop(logger))
     asyncio.create_task(auto_fix_and_restart_if_needed())
     start_monitoring_thread()
 
-    with open("rita_main.py", "r", encoding="utf-8") as f:
-        your_log_text = f.read()
-        run_auto_fix_analysis(your_log_text)
+    # Анализ основного кода
+    try:
+        with open("rita_main.py", "r", encoding="utf-8") as f:
+            code_text = f.read()
+            run_auto_fix_analysis(code_text)
+    except Exception as e:
+        logger.warning(f"⚠️ Не удалось прочитать rita_main.py: {e}")
 
-    logger.info("🤖 Запуск интеллектуального автоулучшения...")
+    logger.info("🧠 Запуск интеллектуального автоулучшения...")
     await run_intelligent_auto_improve()
 
-    logger.info("🚀 Запуск Telegram-бота...")
+    logger.info("🤖 Запуск Telegram-бота...")
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
     register_auxiliary_handlers(app)
 
@@ -4746,7 +4748,6 @@ if __name__ == "__main__":
     nest_asyncio.apply()
     loop = asyncio.get_event_loop()
 
-    # Привязываем сигнал Ctrl+C
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
@@ -4754,9 +4755,8 @@ if __name__ == "__main__":
         loop.run_until_complete(main_entry())
     except Exception as e:
         if "Cannot close a running event loop" in str(e):
-            logging.warning("⚠️ Игнорируем: Cannot close a running event loop")
+            logger.warning("⚠️ Игнорируем: Cannot close a running event loop")
         else:
-            logging.error(f"❌ Критическая ошибка: {e}"),
-
+            logger.error(f"❌ Критическая ошибка: {e}")
 
 
