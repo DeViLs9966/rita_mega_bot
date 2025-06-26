@@ -4669,51 +4669,67 @@ import sys
 import os
 import time
 import logging
-from telegram.ext import Application
+import threading
 
-# --- Предполагается, что всё ниже уже импортировано в твоём проекте ---
-# from utils import update_self, auto_fix_from_logs, auto_backup_and_push, auto_fix_loop, ...
-# from config import TELEGRAM_BOT_TOKEN
-# from handlers import register_auxiliary_handlers
-# from monitor import start_monitoring_thread
-# from logger_setup import logger
+try:
+    import keyboard  # pip install keyboard
+except ImportError:
+    keyboard = None
+    print("⚠️ Модуль keyboard не установлен — перезапуск по 'v' не будет работать")
+
+from telegram.ext import Application
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 shutdown_requested = False
 last_signal_time = 0
-loop = None  # глобальный event loop
+app_instance = None
 
 def restart_program():
     python = sys.executable
     os.execv(python, [python] + sys.argv)
 
 async def safe_update_and_restart():
+    global app_instance
     try:
         logger.info("🔄 Обновление перед перезапуском...")
         await update_self()
+        if app_instance:
+            logger.info("🛑 Останавливаем Telegram-приложение перед рестартом...")
+            await app_instance.stop()
     except Exception as e:
         logger.warning(f"⚠️ Ошибка обновления перед рестартом: {e}")
     finally:
         logger.info("♻️ Перезапуск скрипта...")
         restart_program()
 
-def signal_handler(sig, frame):
-    global shutdown_requested, last_signal_time, loop
-    now = time.time()
-    if shutdown_requested and now - last_signal_time < 3:
-        logger.info("🛑 Повторный Ctrl+C — полный выход.")
-        sys.exit(0)
-    else:
-        shutdown_requested = True
-        last_signal_time = now
-        logger.info("⚠️ Нажми Ctrl+C снова в течение 3 секунд для выхода.")
-        # Безопасно запускаем корутину в event loop
-        loop.call_soon_threadsafe(asyncio.create_task, safe_update_and_restart())
+def signal_handler_sigint(sig, frame):
+    logger.info("🚪 Получен SIGINT (Ctrl+C), корректное завершение.")
+    sys.exit(0)
 
-# --- Основная логика бота ---
+def keyboard_listener():
+    global shutdown_requested, last_signal_time
+    while True:
+        if keyboard is None:
+            time.sleep(1)
+            continue
+        event = keyboard.read_event()
+        if event.event_type == keyboard.KEY_DOWN and event.name.lower() == 'v':
+            now = time.time()
+            if shutdown_requested and now - last_signal_time < 3:
+                logger.info("🛑 Повторный 'v' — полный выход.")
+                os._exit(0)
+            else:
+                shutdown_requested = True
+                last_signal_time = now
+                logger.info("⚠️ Нажата клавиша 'v' — сохраняем и рестартуем.")
+                # Запускаем асинхронный рестарт в event loop
+                asyncio.run_coroutine_threadsafe(safe_update_and_restart(), loop)
+
 async def main_entry():
+    global app_instance
+
     logger.info("🚀 Старт автофикса из логов...")
     await auto_fix_from_logs()
 
@@ -4725,7 +4741,6 @@ async def main_entry():
     asyncio.create_task(auto_fix_and_restart_if_needed())
     start_monitoring_thread()
 
-    # Анализ основного кода
     try:
         with open("rita_main.py", "r", encoding="utf-8") as f:
             code_text = f.read()
@@ -4738,17 +4753,24 @@ async def main_entry():
 
     logger.info("🤖 Запуск Telegram-бота...")
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
+    app_instance = app
+
     register_auxiliary_handlers(app)
 
     await app.run_polling()
 
-# --- Точка входа ---
 if __name__ == "__main__":
     nest_asyncio.apply()
     loop = asyncio.get_event_loop()
 
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler_sigint)
+
+    # Запуск слушателя клавиатуры в отдельном потоке (если есть модуль)
+    if keyboard:
+        t = threading.Thread(target=keyboard_listener, daemon=True)
+        t.start()
+    else:
+        logger.warning("⚠️ keyboard не доступен, функция 'v' для рестарта не работает.")
 
     try:
         loop.run_until_complete(main_entry())
