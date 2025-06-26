@@ -4702,6 +4702,9 @@ async def update_self():
 
 
 
+
+
+
 import nest_asyncio
 import asyncio
 import signal
@@ -4710,22 +4713,19 @@ import os
 import time
 import logging
 import threading
-
 from telegram.ext import Application
 
-# --- Импорты вашего проекта ---
-# from utils import update_self, auto_fix_from_logs, auto_backup_and_push, auto_fix_loop, ...
+# Заглушки, замени на свои реальные импорты
+# from utils import update_self, auto_fix_from_logs, auto_backup_and_push, auto_fix_loop, auto_fix_and_restart_if_needed, run_auto_fix_analysis, run_intelligent_auto_improve
 # from config import TELEGRAM_BOT_TOKEN
 # from handlers import register_auxiliary_handlers
 # from monitor import start_monitoring_thread
-# from logger_setup import logger
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 shutdown_requested = False
 last_signal_time = 0
-app_instance = None  # глобально, чтобы остановить
 
 def restart_program():
     python = sys.executable
@@ -4738,9 +4738,6 @@ async def safe_update_and_restart():
     except Exception as e:
         logger.warning(f"⚠️ Ошибка обновления перед рестартом: {e}")
     finally:
-        if app_instance:
-            logger.info("🛑 Завершение Telegram-приложения перед рестартом...")
-            await app_instance.stop()
         logger.info("♻️ Перезапуск скрипта...")
         restart_program()
 
@@ -4748,25 +4745,26 @@ def signal_handler_sigint(sig, frame):
     global shutdown_requested, last_signal_time
     now = time.time()
     if shutdown_requested and now - last_signal_time < 3:
-        logger.info("🛑 Повторный Ctrl+C — завершение.")
+        logger.info("🛑 Повторный Ctrl+C — полный выход.")
         sys.exit(0)
     else:
         shutdown_requested = True
         last_signal_time = now
         logger.info("⚠️ Нажми Ctrl+C снова в течение 3 секунд для выхода.")
-        # Не перезапускаем сразу — только второй Ctrl+C
+        asyncio.ensure_future(safe_update_and_restart())
 
 def console_input_listener():
+    """
+    Фоновый поток для прослушивания ввода в консоли.
+    При вводе 'v' + Enter запускает безопасное обновление и перезапуск.
+    """
     while True:
-        user_input = input().strip().lower()
-        if user_input == "v":
-            logger.info("🧠 Обнаружено: v + Enter → запускаем обновление и перезапуск...")
-            asyncio.run(safe_update_and_restart())
+        user_input = input()
+        if user_input.strip().lower() == 'v':
+            logger.info("🔄 Получена команда 'v' - запуск обновления и перезапуска.")
+            asyncio.run_coroutine_threadsafe(safe_update_and_restart(), asyncio.get_event_loop())
 
-# --- Основная логика бота ---
 async def main_entry():
-    global app_instance
-
     logger.info("🚀 Старт автофикса из логов...")
     await auto_fix_from_logs()
 
@@ -4790,15 +4788,21 @@ async def main_entry():
 
     logger.info("🤖 Запуск Telegram-бота...")
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
-    app_instance = app
     register_auxiliary_handlers(app)
+    global app_instance
+    app_instance = app
 
     try:
         await app.run_polling()
     finally:
         logger.info("🧹 Telegram-приложение завершено.")
+        try:
+            await app.shutdown()
+            await app.stop()
+        except Exception as e:
+            logger.warning(f"⚠️ Ошибка завершения: {e}")
+        await asyncio.sleep(1)
 
-# --- Точка входа ---
 if __name__ == "__main__":
     nest_asyncio.apply()
     loop = asyncio.get_event_loop()
@@ -4806,6 +4810,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler_sigint)
     signal.signal(signal.SIGTERM, signal_handler_sigint)
 
+    # Запускаем слушатель консоли в отдельном потоке
     threading.Thread(target=console_input_listener, daemon=True).start()
 
     try:
@@ -4813,5 +4818,6 @@ if __name__ == "__main__":
     except Exception as e:
         if "Cannot close a running event loop" in str(e):
             logger.warning("⚠️ Игнорируем: Cannot close a running event loop")
+            time.sleep(1)
         else:
             logger.error(f"❌ Критическая ошибка: {e}")
