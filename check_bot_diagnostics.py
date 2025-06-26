@@ -4512,6 +4512,13 @@ async def run_bot():
     except Exception as e:
         logger.error(f"❌ Ошибка запуска бота: {e}")
 
+
+
+
+
+
+
+
 # --- Основная логика запуска ---
 async def main_entry():
     logger.info("🚀 Старт автофикса из логов...")
@@ -4536,32 +4543,33 @@ async def main_entry():
     await run_bot()
 
 
+# --- Безопасное завершение всех фоновых задач ---
+async def shutdown():
+    logger.info("🛑 Завершение: отмена всех фоновых задач...")
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    for task in tasks:
+        task.cancel()
+    await asyncio.gather(*tasks, return_exceptions=True)
 
 
-
-
-
-# --- Точка входа ---
-if __name__ == "__main__":
-    nest_asyncio.apply()
-    loop = asyncio.get_event_loop()
-
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        try:
-            loop.add_signal_handler(sig, loop.stop)
-        except NotImplementedError:
-            pass  # для Windows / Termux
-
+# --- Обёртка над main_entry() с защитой и shutdown ---
+async def main():
     try:
-        loop.run_until_complete(main_entry())
-    except KeyboardInterrupt:
-        logger.info("🚪 Завершение по Ctrl+C")
+        await main_entry()
     except Exception as e:
         logger.error(f"❌ Критическая ошибка: {e}")
     finally:
-        if not loop.is_closed():
-            loop.close()
+        await shutdown()
 
+
+# --- Точка запуска ---
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("🚪 Завершение по Ctrl+C")
+    except Exception as e:
+        logger.error(f"❌ Фатальная ошибка: {e}")
 
 
 
