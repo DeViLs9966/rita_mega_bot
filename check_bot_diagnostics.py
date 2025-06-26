@@ -4645,11 +4645,15 @@ async def main():
 # --- Точка входа ---
 # --- Точка входа ---
 if __name__ == "__main__":
+    import asyncio
+    import nest_asyncio
+
     try:
+        # Пробуем обычный запуск
         asyncio.run(main())
     except RuntimeError as e:
+        # Если цикл уже активен — патчим через nest_asyncio
         if "Cannot close a running event loop" in str(e):
-            import nest_asyncio
             nest_asyncio.apply()
             loop = asyncio.get_event_loop()
             loop.run_until_complete(main())
@@ -4659,7 +4663,6 @@ if __name__ == "__main__":
         logger.info("🚪 Завершение по Ctrl+C")
     except Exception as e:
         logger.error(f"❌ Фатальная ошибка: {e}")
-
 
 
 
