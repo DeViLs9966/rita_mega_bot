@@ -4692,6 +4692,9 @@ def signal_handler(sig, frame):
 
 
 
+
+
+
 if __name__ == "__main__":
     import asyncio
     import signal
@@ -4718,3 +4721,4 @@ if __name__ == "__main__":
             logging.error(f"❌ Критическая ошибка: {e}")
     finally:
         pass  # Не вызываем loop.close() — это важно
+
