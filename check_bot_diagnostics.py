@@ -4665,40 +4665,45 @@ async def main():
 
 
 
-
+import nest_asyncio
 import asyncio
 import signal
 import sys
 import os
 import time
-import nest_asyncio
 import logging
 
-# Инициализация логгера (если ещё не настроен)
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+from telegram.ext import Application
+# Предполагается, что все нужные импорты уже сделаны, включая:
+# - update_self
+# - auto_fix_from_logs
+# - auto_backup_and_push
+# - auto_fix_loop
+# - auto_fix_and_restart_if_needed
+# - run_auto_fix_analysis
+# - run_intelligent_auto_improve
+# - register_auxiliary_handlers
+# - TELEGRAM_BOT_TOKEN
+# - start_monitoring_thread
+# - logger
 
-# --- Переменные и флаг завершения ---
 shutdown_requested = False
 last_signal_time = 0
 
-# --- Перезапуск программы ---
 def restart_program():
     python = sys.executable
     os.execv(python, [python] + sys.argv)
 
-# --- Безопасный автоапдейт + перезапуск ---
 async def safe_update_and_restart():
     try:
         logger.info("🔄 Обновление перед перезапуском...")
-        await update_self()  # функция автообновления
+        await update_self()
     except Exception as e:
         logger.warning(f"⚠️ Ошибка обновления перед рестартом: {e}")
     finally:
         logger.info("♻️ Перезапуск скрипта...")
         restart_program()
 
-# --- Обработка Ctrl+C ---
 def signal_handler(sig, frame):
     global shutdown_requested, last_signal_time
     now = time.time()
@@ -4711,12 +4716,11 @@ def signal_handler(sig, frame):
         logger.info("⚠️ Нажми Ctrl+C снова в течение 3 секунд для выхода.")
         asyncio.ensure_future(safe_update_and_restart())
 
-# --- Асинхронная точка входа ---
 async def main_entry():
     logger.info("🚀 Старт автофикса из логов...")
     await auto_fix_from_logs()
 
-    logger.info("💾 Резервное копирование и GitHub push...")
+    logger.info("💾 Выполнение резервного копирования и пуша в GitHub...")
     await auto_backup_and_push()
 
     logger.info("🔧 Запуск фоновых задач автофикса...")
@@ -4733,32 +4737,26 @@ async def main_entry():
 
     logger.info("🚀 Запуск Telegram-бота...")
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
-
     register_auxiliary_handlers(app)
+
     await app.run_polling()
 
-# --- Точка запуска ---
+# --- Точка входа ---
 if __name__ == "__main__":
     nest_asyncio.apply()
     loop = asyncio.get_event_loop()
 
-    # Обработка сигналов
+    # Привязываем сигнал Ctrl+C
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
     try:
         loop.run_until_complete(main_entry())
-    except KeyboardInterrupt:
-        logger.info("🚪 Завершение по Ctrl+C")
     except Exception as e:
         if "Cannot close a running event loop" in str(e):
-            logger.warning("⚠️ Игнорируем ошибку закрытия активного цикла событий.")
+            logging.warning("⚠️ Игнорируем: Cannot close a running event loop")
         else:
-            logger.error(f"❌ Критическая ошибка: {e}")
-    finally:
-        # Никаких loop.close()
-        pass
-
+            logging.error(f"❌ Критическая ошибка: {e}"),
 
 
 
