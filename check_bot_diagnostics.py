@@ -4708,16 +4708,12 @@ if __name__ == "__main__":
             pass
 
     try:
-        loop.run_until_complete(main())
+        loop.run_until_complete(main())  # или main_wrapper()
     except KeyboardInterrupt:
         logging.info("🚪 Завершение по Ctrl+C")
     except Exception as e:
         logging.error(f"❌ Критическая ошибка: {e}")
     finally:
-        if not loop.is_closed():
-            try:
-                loop.close()
-            except Exception:
-                pass
-
+        # ❌ Не закрываем loop вручную — это и вызывает ошибку
+        pass
 
