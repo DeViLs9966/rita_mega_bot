@@ -4644,23 +4644,28 @@ async def main():
 
 # --- Точка входа ---
 # --- Точка входа ---
+import nest_asyncio
+import asyncio
+import signal
+
 if __name__ == "__main__":
-    import asyncio
-    import nest_asyncio
-    import sys
+    nest_asyncio.apply()  # ⬅️ Позволяет переиспользовать loop
+
+    loop = asyncio.get_event_loop()
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            loop.add_signal_handler(sig, loop.stop)
+        except NotImplementedError:
+            pass  # например, для Windows или Termux
 
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            nest_asyncio.apply()
-            loop.create_task(main())
-        else:
-            loop.run_until_complete(main())
+        loop.run_until_complete(main())  # ✅ запускаем main без ошибок
     except KeyboardInterrupt:
         logger.info("🚪 Завершение по Ctrl+C")
-        sys.exit(0)
     except Exception as e:
-        logger.error(f"❌ Фатальная ошибка: {e}")
-        sys.exit(1)
-
+        logger.error(f"❌ Критическая ошибка: {e}")
+    finally:
+        if not loop.is_closed():
+            loop.close()
 
