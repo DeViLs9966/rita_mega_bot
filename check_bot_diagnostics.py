@@ -2095,24 +2095,41 @@ async def periodic_self_improve():
         await asyncio.sleep(1800)  # 30 минут
 # --- Главная асинхронная функция ---
 fix_rita_main_asyncio_run()
+
+
 async def main():
     log_info("🚀 Запуск скрипта диагностики RITA AI")
+
     if not TELEGRAM_BOT_TOKEN:
         log_error("❌ TELEGRAM_BOT_TOKEN не задан. Прекращение работы.")
         sys.exit(1)
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).close_loop(False).build()
+
+    app = (
+        Application.builder()
+        .token(TELEGRAM_BOT_TOKEN)
+        .concurrent_updates(True)
+        .close_loop(False)
+        .build()
+    )
+
     # Регистрация команд
     app.add_handler(CommandHandler("pro", cmd_pro))
     app.add_handler(CommandHandler("proverka", cmd_proverka))
     app.add_handler(CommandHandler("update_main", cmd_update_main))
     app.add_handler(CommandHandler("update_self", cmd_update_self))
+
     # Фоновые задачи
     asyncio.create_task(periodic_self_improve())
     start_monitoring_thread()
     start_advanced_self_learning_thread()
     start_periodic_report()
     asyncio.create_task(auto_fix_and_restart_if_needed())
+
+    # Запуск бота
     await app.run_polling()
+
+
+
 # --- Обработка Ctrl+safe_path_join(C, SIGTERM) ---
 def handle_exit(signal_received, frame):
     log_info("📴 Скрипт завершён пользователем (Ctrl+C)")
@@ -3313,18 +3330,39 @@ def check_scripts_health():
     return problems
 
 # --- Отправка сообщения в Telegram ---
+
+
+
+from telegram.ext import Application
+import logging
+
+logger = logging.getLogger(__name__)
+
 async def send_telegram_message(text, app=None):
     try:
         if app is None:
-            from telegram.ext import ApplicationBuilder
-        app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).close_loop(False).build()
-        # Разбиваем длинные сообщения на части по ~4000 символов
+            app = (
+                Application.builder()
+                .token(TELEGRAM_BOT_TOKEN)
+                .concurrent_updates(True)
+                .close_loop(False)
+                .build()
+            )
+            await app.initialize()
+            await app.start()
+
+        # ✅ Разбиваем длинные сообщения на части по 3900 символов
         chunk_size = 3900
         for i in range(0, len(text), chunk_size):
-            await app.bot.send_message(chat_id=OWNER_ID, text=text[i:i+chunk_size], parse_mode=ParseMode.HTML)
-        logger.info("Отчёт отправлен в Telegram.")
+            await app.bot.send_message(chat_id=OWNER_ID, text=text[i:i+chunk_size])
+
+        logger.info("✅ Отчёт отправлен в Telegram.")
+
     except Exception as e:
-        logger.error(f"Ошибка при отправке сообщения в Telegram: {e}")
+        logger.error(f"❌ Ошибка при отправке сообщения в Telegram: {e}")
+
+
+
 
 # --- Автофиксы: добавление недостающих функций в скрипты ---
 async def apply_auto_fixes(app=None):
@@ -4487,31 +4525,48 @@ async def auto_fix_from_logs():
 
 # --- Запуск Telegram-бота ---
 # --- Запуск Telegram-бота ---
+
+
+from telegram.ext import Application
+from telegram.error import Conflict
+# --- Запуск Telegram-бота ---
+
+
+
+
+
+
+
+from telegram.ext import Application
+
 async def run_bot():
     try:
+        # ✅ Создаём Telegram-бота с правильными параметрами
         app = (
-            ApplicationBuilder()
+            Application.builder()
             .token(TELEGRAM_BOT_TOKEN)
             .concurrent_updates(True)
+            .close_loop(False)
             .build()
         )
+
+        # ✅ Подключаем хендлеры
         register_auxiliary_handlers(app)
+
         logger.info("✅ Бот запущен и работает.")
 
+        # ✅ Запуск фоновых задач
         asyncio.create_task(auto_fix_loop(logger))
         asyncio.create_task(auto_fix_and_restart_if_needed())
-        start_monitoring_thread()
         asyncio.create_task(improvements_loop())
-        await app.run_polling()
+        start_monitoring_thread()
 
-    except Conflict as e:
-        logger.warning(f"⚠️ Конфликт запуска: {e}")
-        logger.info("🔁 Перезапуск через 10 секунд...")
-        await asyncio.sleep(10)
-        await run_bot()
+        # ✅ Запуск Telegram-поллинга
+        await app.run_polling()
 
     except Exception as e:
         logger.error(f"❌ Ошибка запуска бота: {e}")
+
 
 
 
