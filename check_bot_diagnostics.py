@@ -4486,13 +4486,13 @@ async def auto_fix_from_logs():
 
 
 # --- Запуск Telegram-бота ---
+# --- Запуск Telegram-бота ---
 async def run_bot():
     try:
         app = (
-            Application.builder()
+            ApplicationBuilder()
             .token(TELEGRAM_BOT_TOKEN)
             .concurrent_updates(True)
-            .close_loop(False)  # <--- важный параметр, чтобы избежать ошибки
             .build()
         )
         register_auxiliary_handlers(app)
