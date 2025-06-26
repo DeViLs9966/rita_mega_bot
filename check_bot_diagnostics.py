@@ -4664,7 +4664,6 @@ async def main():
 
 
 
-
 import nest_asyncio
 import asyncio
 import signal
@@ -4674,7 +4673,7 @@ import time
 import logging
 from telegram.ext import Application
 
-# --- Предполагается, что всё ниже уже импортировано в твоём проекте ---
+# Предполагается, что всё это уже реализовано в твоём проекте:
 # from utils import update_self, auto_fix_from_logs, auto_backup_and_push, auto_fix_loop, ...
 # from config import TELEGRAM_BOT_TOKEN
 # from handlers import register_auxiliary_handlers
@@ -4686,18 +4685,28 @@ logging.basicConfig(level=logging.INFO)
 
 shutdown_requested = False
 last_signal_time = 0
+app_instance = None  # Глобальная ссылка на Application
 
 def restart_program():
     python = sys.executable
     os.execv(python, [python] + sys.argv)
 
 async def safe_update_and_restart():
+    global app_instance
     try:
         logger.info("🔄 Обновление перед перезапуском...")
         await update_self()
     except Exception as e:
         logger.warning(f"⚠️ Ошибка обновления перед рестартом: {e}")
     finally:
+        try:
+            if app_instance:
+                logger.info("🧹 Завершаем Telegram-приложение перед перезапуском...")
+                await app_instance.updater.stop()
+                await app_instance.stop()
+                await app_instance.shutdown()
+        except Exception as e:
+            logger.warning(f"⚠️ Ошибка при остановке Application: {e}")
         logger.info("♻️ Перезапуск скрипта...")
         restart_program()
 
@@ -4715,6 +4724,8 @@ def signal_handler(sig, frame):
 
 # --- Основная логика бота ---
 async def main_entry():
+    global app_instance
+
     logger.info("🚀 Старт автофикса из логов...")
     await auto_fix_from_logs()
 
@@ -4726,7 +4737,6 @@ async def main_entry():
     asyncio.create_task(auto_fix_and_restart_if_needed())
     start_monitoring_thread()
 
-    # Анализ основного кода
     try:
         with open("rita_main.py", "r", encoding="utf-8") as f:
             code_text = f.read()
@@ -4739,9 +4749,19 @@ async def main_entry():
 
     logger.info("🤖 Запуск Telegram-бота...")
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
+    app_instance = app
     register_auxiliary_handlers(app)
 
-    await app.run_polling()
+    try:
+        await app.initialize()
+        await app.start()
+        await app.updater.start_polling()
+        await app.updater.idle()
+    finally:
+        logger.info("🧹 Завершаем Telegram-приложение...")
+        await app.updater.stop()
+        await app.stop()
+        await app.shutdown()
 
 # --- Точка входа ---
 if __name__ == "__main__":
@@ -4758,5 +4778,3 @@ if __name__ == "__main__":
             logger.warning("⚠️ Игнорируем: Cannot close a running event loop")
         else:
             logger.error(f"❌ Критическая ошибка: {e}")
-
-
