@@ -4891,8 +4891,6 @@ async def main_entry():
     asyncio.create_task(auto_fix_loop(logger))
     asyncio.create_task(auto_fix_and_restart_if_needed())
     start_monitoring_thread()
-    app.add_handler(CommandHandler("logs", logs_command))
-    app.add_handler(CommandHandler("logfile", logfile_command))
     try:
         with open("rita_main.py", "r", encoding="utf-8") as f:
             run_auto_fix_analysis(f.read())
@@ -4906,7 +4904,8 @@ async def main_entry():
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
     app_instance = app
     register_auxiliary_handlers(app)
-
+    app.add_handler(CommandHandler("logs", logs_command))
+    app.add_handler(CommandHandler("logfile", logfile_command))
     try:
         await app.run_polling()
     except asyncio.CancelledError:
