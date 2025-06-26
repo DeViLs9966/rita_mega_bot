@@ -4649,46 +4649,49 @@ import asyncio
 import signal
 import sys
 import os
-import time
 
-shutdown_requested = False
-last_signal_time = 0
+nest_asyncio.apply()
+loop = asyncio.get_event_loop()
 
 def restart_program():
     python = sys.executable
     os.execv(python, [python] + sys.argv)
 
-async def safe_update_and_restart():
-    try:
-        logger.info("🔄 Обновление перед перезапуском...")
-        await update_self()  # твоя функция обновления
-    except Exception as e:
-        logger.warning(f"⚠️ Ошибка обновления перед рестартом: {e}")
-    finally:
-        logger.info("♻️ Перезапуск скрипта...")
-        restart_program()
+def stop_program():
+    logger.info("🛑 Скрипт завершён пользователем.")
+    sys.exit(0)
 
 def signal_handler(sig, frame):
-    global shutdown_requested, last_signal_time
-    now = time.time()
-    if shutdown_requested and now - last_signal_time < 3:
-        logger.info("🛑 Повторный Ctrl+C — полный выход.")
-        sys.exit(0)
-    else:
-        shutdown_requested = True
-        last_signal_time = now
-        logger.info("⚠️ Нажми Ctrl+C снова в течение 3 секунд для выхода.")
-        asyncio.ensure_future(safe_update_and_restart())
+    if sig == signal.SIGINT:
+        logger.info("🛑 [Ctrl+C] — Завершение работы.")
+        stop_program()
+
+# Подключаем обработчик Ctrl+C
+signal.signal(signal.SIGINT, signal_handler)
+
+async def wait_for_manual_restart():
+    logger.info("🔁 Нажми 'v' и Enter для обновления и рестарта, либо Ctrl+C для выхода.")
+    while True:
+        inp = await loop.run_in_executor(None, sys.stdin.readline)
+        if inp.strip().lower() == "v":
+            logger.info("🔄 Обновление и перезапуск скрипта...")
+            try:
+                await update_self()  # твоя функция обновления
+            except Exception as e:
+                logger.warning(f"⚠️ Ошибка при обновлении: {e}")
+            restart_program()
+
+async def main_wrapper():
+    await asyncio.gather(
+        main(),  # твоя основная логика
+        wait_for_manual_restart(),  # ожидаем ввода 'v'
+    )
 
 if __name__ == "__main__":
-    nest_asyncio.apply()
-    loop = asyncio.get_event_loop()
-
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
     try:
-        loop.run_until_complete(main())
+        loop.run_until_complete(main_wrapper())
+    except KeyboardInterrupt:
+        logger.info("🚪 Завершение по Ctrl+C")
     except Exception as e:
         logger.error(f"❌ Критическая ошибка: {e}")
     finally:
