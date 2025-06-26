@@ -4671,7 +4671,7 @@ import time
 import logging
 from telegram.ext import Application
 
-# ✅ Импорты всех твоих функций
+# --- Предполагается, что всё ниже уже импортировано в твоём проекте ---
 # from utils import update_self, auto_fix_from_logs, auto_backup_and_push, auto_fix_loop, ...
 # from config import TELEGRAM_BOT_TOKEN
 # from handlers import register_auxiliary_handlers
@@ -4683,31 +4683,24 @@ logging.basicConfig(level=logging.INFO)
 
 shutdown_requested = False
 last_signal_time = 0
-app_instance = None  # глобальный объект Telegram-приложения
+loop = None  # глобальный event loop
 
 def restart_program():
     python = sys.executable
     os.execv(python, [python] + sys.argv)
 
 async def safe_update_and_restart():
-    global app_instance
     try:
         logger.info("🔄 Обновление перед перезапуском...")
         await update_self()
     except Exception as e:
         logger.warning(f"⚠️ Ошибка обновления перед рестартом: {e}")
     finally:
-        try:
-            if app_instance:
-                logger.info("🧹 Завершаем Telegram-приложение...")
-                await app_instance.shutdown()
-        except Exception as e:
-            logger.warning(f"⚠️ Ошибка при остановке приложения: {e}")
         logger.info("♻️ Перезапуск скрипта...")
         restart_program()
 
 def signal_handler(sig, frame):
-    global shutdown_requested, last_signal_time
+    global shutdown_requested, last_signal_time, loop
     now = time.time()
     if shutdown_requested and now - last_signal_time < 3:
         logger.info("🛑 Повторный Ctrl+C — полный выход.")
@@ -4716,14 +4709,11 @@ def signal_handler(sig, frame):
         shutdown_requested = True
         last_signal_time = now
         logger.info("⚠️ Нажми Ctrl+C снова в течение 3 секунд для выхода.")
-        asyncio.ensure_future(safe_update_and_restart())
+        # Безопасно запускаем корутину в event loop
+        loop.call_soon_threadsafe(asyncio.create_task, safe_update_and_restart())
 
-# --- Главная логика ---
-
-
+# --- Основная логика бота ---
 async def main_entry():
-    global app_instance
-
     logger.info("🚀 Старт автофикса из логов...")
     await auto_fix_from_logs()
 
@@ -4735,6 +4725,7 @@ async def main_entry():
     asyncio.create_task(auto_fix_and_restart_if_needed())
     start_monitoring_thread()
 
+    # Анализ основного кода
     try:
         with open("rita_main.py", "r", encoding="utf-8") as f:
             code_text = f.read()
@@ -4747,17 +4738,9 @@ async def main_entry():
 
     logger.info("🤖 Запуск Telegram-бота...")
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
-    app_instance = app
-
     register_auxiliary_handlers(app)
 
-    logger.info("🧹 Завершаем Telegram-приложение...")
-    # ✅ Современный способ запуска
     await app.run_polling()
-
-
-
-
 
 # --- Точка входа ---
 if __name__ == "__main__":
