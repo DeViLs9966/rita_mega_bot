@@ -786,3 +786,12 @@ if __name__ == '__main__':
         loop.run_until_complete(main())
     except (KeyboardInterrupt, SystemExit):
         pass
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass

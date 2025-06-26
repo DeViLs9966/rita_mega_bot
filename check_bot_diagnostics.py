@@ -4647,22 +4647,20 @@ async def main():
 if __name__ == "__main__":
     import asyncio
     import nest_asyncio
+    import sys
 
     try:
-        # Пробуем обычный запуск
-        asyncio.run(main())
-    except RuntimeError as e:
-        # Если цикл уже активен — патчим через nest_asyncio
-        if "Cannot close a running event loop" in str(e):
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
             nest_asyncio.apply()
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(main())
+            loop.create_task(main())
         else:
-            raise
+            loop.run_until_complete(main())
     except KeyboardInterrupt:
         logger.info("🚪 Завершение по Ctrl+C")
+        sys.exit(0)
     except Exception as e:
         logger.error(f"❌ Фатальная ошибка: {e}")
-
+        sys.exit(1)
 
 
