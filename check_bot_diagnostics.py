@@ -4671,12 +4671,6 @@ import time
 import logging
 import threading
 
-try:
-    import keyboard  # pip install keyboard
-except ImportError:
-    keyboard = None
-    print("⚠️ Модуль keyboard не установлен — перезапуск по 'v' не будет работать")
-
 from telegram.ext import Application
 
 logger = logging.getLogger(__name__)
@@ -4685,6 +4679,7 @@ logging.basicConfig(level=logging.INFO)
 shutdown_requested = False
 last_signal_time = 0
 app_instance = None
+loop = None  # Глобальная ссылка на event loop
 
 def restart_program():
     python = sys.executable
@@ -4708,14 +4703,11 @@ def signal_handler_sigint(sig, frame):
     logger.info("🚪 Получен SIGINT (Ctrl+C), корректное завершение.")
     sys.exit(0)
 
-def keyboard_listener():
-    global shutdown_requested, last_signal_time
+def console_input_listener():
+    global shutdown_requested, last_signal_time, loop
     while True:
-        if keyboard is None:
-            time.sleep(1)
-            continue
-        event = keyboard.read_event()
-        if event.event_type == keyboard.KEY_DOWN and event.name.lower() == 'v':
+        line = sys.stdin.readline().strip().lower()
+        if line == "v":
             now = time.time()
             if shutdown_requested and now - last_signal_time < 3:
                 logger.info("🛑 Повторный 'v' — полный выход.")
@@ -4723,9 +4715,9 @@ def keyboard_listener():
             else:
                 shutdown_requested = True
                 last_signal_time = now
-                logger.info("⚠️ Нажата клавиша 'v' — сохраняем и рестартуем.")
-                # Запускаем асинхронный рестарт в event loop
-                asyncio.run_coroutine_threadsafe(safe_update_and_restart(), loop)
+                logger.info("⚠️ Введена команда 'v' — сохраняем и рестартуем.")
+                if loop:
+                    asyncio.run_coroutine_threadsafe(safe_update_and_restart(), loop)
 
 async def main_entry():
     global app_instance
@@ -4765,12 +4757,8 @@ if __name__ == "__main__":
 
     signal.signal(signal.SIGINT, signal_handler_sigint)
 
-    # Запуск слушателя клавиатуры в отдельном потоке (если есть модуль)
-    if keyboard:
-        t = threading.Thread(target=keyboard_listener, daemon=True)
-        t.start()
-    else:
-        logger.warning("⚠️ keyboard не доступен, функция 'v' для рестарта не работает.")
+    # Запускаем отдельный поток для чтения строк из консоли
+    threading.Thread(target=console_input_listener, daemon=True).start()
 
     try:
         loop.run_until_complete(main_entry())
