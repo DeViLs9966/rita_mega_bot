@@ -1,27 +1,3 @@
-
-
-
-
-
-import logging
-import os
-
-# Создаём папку логов
-os.makedirs("logs", exist_ok=True)
-
-# Настройка логгера
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-    handlers=[
-        logging.FileHandler("logs/rita_bot.log", encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
-
-logger = logging.getLogger(__name__)
-
-
 from telegram.ext import Application
 from auto_fix_tools import run_auto_fix_analysis
 import sys
@@ -4686,98 +4662,6 @@ async def main():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-from telegram import Bot
-
-TELEGRAM_BOT_TOKEN = "7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4"
-TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID
-
-class TelegramErrorHandler(logging.Handler):
-    def __init__(self, bot_token, chat_id):
-        super().__init__()
-        self.bot = Bot(bot_token)
-        self.chat_id = chat_id
-
-    def emit(self, record):
-        try:
-            log_entry = self.format(record)
-            if record.levelno >= logging.WARNING:
-                asyncio.run(self.bot.send_message(chat_id=self.chat_id, text=f"⚠️ *{record.levelname}*\n`{log_entry}`", parse_mode="Markdown"))
-        except Exception as e:
-            print(f"Ошибка отправки логов в Telegram: {e}")
-
-telegram_handler = TelegramErrorHandler(TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_ID)
-telegram_handler.setLevel(logging.WARNING)
-telegram_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'))
-
-logger.addHandler(telegram_handler)
-
-
-
-
-
-
-
-from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes
-
-def get_recent_errors_from_log(limit=50):
-    path = "logs/rita_bot.log"
-    if not os.path.exists(path):
-        return "❌ Лог-файл не найден."
-
-    with open(path, "r", encoding="utf-8") as f:
-        errors = [line.strip() for line in f if any(e in line for e in ["ERROR", "CRITICAL", "WARNING"])]
-
-    return "\n".join(errors[-limit:]) if errors else "✅ Ошибок не найдено."
-
-async def logs_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = get_recent_errors_from_log()
-    await update.message.reply_text(f"📄 Последние ошибки:\n\n{text[-4000:]}")
-
-
-
-
-
-
-
-
-
-async def logfile_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    path = "logs/rita_bot.log"
-    if os.path.exists(path):
-        await update.message.reply_document(document=open(path, "rb"), filename="rita_bot.log")
-    else:
-        await update.message.reply_text("❌ Лог-файл не найден.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 async def update_self():
     import subprocess
     import logging
@@ -4891,8 +4775,7 @@ async def main_entry():
     asyncio.create_task(auto_fix_loop(logger))
     asyncio.create_task(auto_fix_and_restart_if_needed())
     start_monitoring_thread()
-    app.add_handler(CommandHandler("logs", logs_command))
-    app.add_handler(CommandHandler("logfile", logfile_command))
+
     try:
         with open("rita_main.py", "r", encoding="utf-8") as f:
             run_auto_fix_analysis(f.read())
