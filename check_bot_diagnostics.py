@@ -548,7 +548,7 @@ async def pro_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет, админ! Это safe_path_join(команда, pro).")
     # Здесь можно добавить автообновление или диагностику
 async def main():
-    application = Application.builder().token(TELEGRAM_TOKEN).close_loop(False).build()
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
     asyncio.create_task(background_auto_fix_loop())
     application.add_handler(CommandHandler("start", process_message))
     application.add_handler(CommandHandler("gpt4", process_message))
@@ -2108,7 +2108,7 @@ async def main():
         Application.builder()
         .token(TELEGRAM_BOT_TOKEN)
         .concurrent_updates(True)
-        .close_loop(False)
+        #.close_loop(False)
         .build()
     )
 
@@ -3345,7 +3345,7 @@ async def send_telegram_message(text, app=None):
                 Application.builder()
                 .token(TELEGRAM_BOT_TOKEN)
                 .concurrent_updates(True)
-                .close_loop(False)
+                #.close_loop(False)
                 .build()
             )
             await app.initialize()
@@ -4546,7 +4546,7 @@ async def run_bot():
             Application.builder()
             .token(TELEGRAM_BOT_TOKEN)
             .concurrent_updates(True)
-            .close_loop(False)
+            #.close_loop(False)
             .build()
         )
 
