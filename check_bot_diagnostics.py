@@ -548,7 +548,7 @@ async def pro_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет, админ! Это safe_path_join(команда, pro).")
     # Здесь можно добавить автообновление или диагностику
 async def main():
-    application = Application.builder().token(TELEGRAM_TOKEN).build()
+    app = Application.builder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
     asyncio.create_task(background_auto_fix_loop())
     application.add_handler(CommandHandler("start", process_message))
     application.add_handler(CommandHandler("gpt4", process_message))
@@ -4585,6 +4585,8 @@ from telegram.ext import Application
 
 from telegram.ext import Application  # убедись, что импорт есть
 
+
+
 async def main_entry():
     logger.info("🚀 Старт автофикса из логов...")
     await auto_fix_from_logs()
@@ -4606,19 +4608,20 @@ async def main_entry():
 
     logger.info("🚀 Запуск Telegram-бота...")
 
-    app = (
-        Application.builder()
-        .token(TELEGRAM_BOT_TOKEN)
-        .concurrent_updates(True)
-        .build()
-    )
+    # ✅ Актуальный способ без .close_loop()
+    app = Application.builder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
 
-    # Пример: подключение обработчиков команд
-    # app.add_handler(CommandHandler("start", start_handler))
-    # app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
-
-    # ⬇️ Правильный запуск бота
+    register_auxiliary_handlers(app)  # если есть хендлеры
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling()
+    await app.updater.idle()
+    await app.stop()
+    await app.shutdown()
     await app.run_polling()
+
+
+
 
 
 # --- Завершение всех задач ---
