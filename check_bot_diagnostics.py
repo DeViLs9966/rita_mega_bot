@@ -4662,8 +4662,6 @@ async def main():
 
 
 
-
-
 import nest_asyncio
 import asyncio
 import signal
@@ -4673,7 +4671,7 @@ import time
 import logging
 from telegram.ext import Application
 
-# Предполагается, что всё это уже реализовано в твоём проекте:
+# ✅ Импорты всех твоих функций
 # from utils import update_self, auto_fix_from_logs, auto_backup_and_push, auto_fix_loop, ...
 # from config import TELEGRAM_BOT_TOKEN
 # from handlers import register_auxiliary_handlers
@@ -4685,7 +4683,7 @@ logging.basicConfig(level=logging.INFO)
 
 shutdown_requested = False
 last_signal_time = 0
-app_instance = None  # Глобальная ссылка на Application
+app_instance = None  # глобальный объект Telegram-приложения
 
 def restart_program():
     python = sys.executable
@@ -4701,12 +4699,10 @@ async def safe_update_and_restart():
     finally:
         try:
             if app_instance:
-                logger.info("🧹 Завершаем Telegram-приложение перед перезапуском...")
-                await app_instance.updater.stop()
-                await app_instance.stop()
+                logger.info("🧹 Завершаем Telegram-приложение...")
                 await app_instance.shutdown()
         except Exception as e:
-            logger.warning(f"⚠️ Ошибка при остановке Application: {e}")
+            logger.warning(f"⚠️ Ошибка при остановке приложения: {e}")
         logger.info("♻️ Перезапуск скрипта...")
         restart_program()
 
@@ -4722,7 +4718,9 @@ def signal_handler(sig, frame):
         logger.info("⚠️ Нажми Ctrl+C снова в течение 3 секунд для выхода.")
         asyncio.ensure_future(safe_update_and_restart())
 
-# --- Основная логика бота ---
+# --- Главная логика ---
+
+
 async def main_entry():
     global app_instance
 
@@ -4750,18 +4748,16 @@ async def main_entry():
     logger.info("🤖 Запуск Telegram-бота...")
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
     app_instance = app
+
     register_auxiliary_handlers(app)
 
-    try:
-        await app.initialize()
-        await app.start()
-        await app.updater.start_polling()
-        await app.updater.idle()
-    finally:
-        logger.info("🧹 Завершаем Telegram-приложение...")
-        await app.updater.stop()
-        await app.stop()
-        await app.shutdown()
+    logger.info("🧹 Завершаем Telegram-приложение...")
+    # ✅ Современный способ запуска
+    await app.run_polling()
+
+
+
+
 
 # --- Точка входа ---
 if __name__ == "__main__":
