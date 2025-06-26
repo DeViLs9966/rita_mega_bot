@@ -548,7 +548,7 @@ async def pro_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет, админ! Это safe_path_join(команда, pro).")
     # Здесь можно добавить автообновление или диагностику
 async def main():
-    application = Application.builder().token(TELEGRAM_TOKEN).close_loop(False).build()
+    application = ApplicationBuilder().token(TELEGRAM_TOKEN).close_loop(False).build()
     asyncio.create_task(background_auto_fix_loop())
     application.add_handler(CommandHandler("start", process_message))
     application.add_handler(CommandHandler("gpt4", process_message))
@@ -2105,7 +2105,7 @@ async def main():
         sys.exit(1)
 
     app = (
-        Application.builder()
+        ApplicationBuilder()
         .token(TELEGRAM_BOT_TOKEN)
         .concurrent_updates(True)
         .close_loop(False)
@@ -3342,7 +3342,7 @@ async def send_telegram_message(text, app=None):
     try:
         if app is None:
             app = (
-                Application.builder()
+                ApplicationBuilder()
                 .token(TELEGRAM_BOT_TOKEN)
                 .concurrent_updates(True)
                 .close_loop(False)
@@ -4543,7 +4543,7 @@ async def run_bot():
     try:
         # ✅ Создаём Telegram-бота с правильными параметрами
         app = (
-            Application.builder()
+            ApplicationBuilder()
             .token(TELEGRAM_BOT_TOKEN)
             .concurrent_updates(True)
             .close_loop(False)
@@ -4602,8 +4602,8 @@ async def main_entry():
 
     logger.info("🚀 Запуск Telegram-бота...")
 
-    # ✅ Используем Application.builder с close_loop(False)
-    app = Application.builder().token(TELEGRAM_BOT_TOKEN).close_loop(False).build()
+    # ✅ Используем ApplicationBuilder с close_loop(False)
+    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).close_loop(False).build()
 
     # 🔄 Добавляем обработчики (если есть)
     # app.add_handler(...)  # <-- если есть хендлеры
