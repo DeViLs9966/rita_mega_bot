@@ -2100,7 +2100,7 @@ async def main():
     if not TELEGRAM_BOT_TOKEN:
         log_error("❌ TELEGRAM_BOT_TOKEN не задан. Прекращение работы.")
         sys.exit(1)
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).close_loop(False).build()
     # Регистрация команд
     app.add_handler(CommandHandler("pro", cmd_pro))
     app.add_handler(CommandHandler("proverka", cmd_proverka))
@@ -3317,7 +3317,7 @@ async def send_telegram_message(text, app=None):
     try:
         if app is None:
             from telegram.ext import ApplicationBuilder
-            app = ApplicationBuilder().token("ТВОЙ_ТЕЛЕГРАМ_ТОКЕН").build()
+        app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).close_loop(False).build()
         # Разбиваем длинные сообщения на части по ~4000 символов
         chunk_size = 3900
         for i in range(0, len(text), chunk_size):
