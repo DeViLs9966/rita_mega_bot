@@ -1,0 +1,69 @@
+import os
+import re
+
+FILES = ["check_bot_diagnostics.py", "rita_main.py"]
+BACKUP_SUFFIX = ".bak"
+
+WRAPPER_CODE = '''
+# ✅ Обёртка для защиты send_admin_message от некорректных вызовов
+def debug_send_admin_message_wrapper(func):
+    import functools
+    import logging
+
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        try:
+            if len(args) < 2 and 'text' not in kwargs:
+                logging.warning("⚠️ [DEBUG] send_admin_message вызван без текстового аргумента! args=%s, kwargs=%s", args, kwargs)
+                return
+            return await func(*args, **kwargs)
+        except Exception as e:
+            logging.error(f"❌ Ошибка в debug_send_admin_message_wrapper: {e}")
+    return wrapper
+
+# 🛡️ Оборачиваем send_admin_message (однократно)
+send_admin_message = debug_send_admin_message_wrapper(send_admin_message)
+'''
+
+def patch_file(filename):
+    print(f"\n📄 Проверяем файл: {filename}")
+
+    if not os.path.exists(filename):
+        print(f"❌ Файл не найден: {filename}")
+        return
+
+    # Создаём бэкап
+    backup_file = filename + BACKUP_SUFFIX
+    if not os.path.exists(backup_file):
+        with open(filename, "r", encoding="utf-8") as f:
+            original = f.read()
+        with open(backup_file, "w", encoding="utf-8") as f:
+            f.write(original)
+        print(f"✅ Бэкап создан: {backup_file}")
+    else:
+        print(f"⚠️ Бэкап уже существует: {backup_file}")
+
+    with open(filename, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Проверим, уже вставляли ли обёртку
+    if "debug_send_admin_message_wrapper" in content:
+        print("ℹ️ Обёртка уже присутствует.")
+        return
+
+    # Найдём место после определения async def send_admin_message
+    pattern = r"(async\s+def\s+send_admin_message\s*[^]*\s*:[^\n]*\n(?:\s+.*\n)+?)"
+    match = re.search(pattern, content)
+
+    if match:
+        insertion_point = match.end()
+        new_content = content[:insertion_point] + WRAPPER_CODE + "\n" + content[insertion_point:]
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        print("✅ Обёртка успешно вставлена.")
+    else:
+        print("❌ Не найдено определение send_admin_message для вставки.")
+
+if __name__ == "__main__":
+    for file in FILES:
+        patch_file(file)

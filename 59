@@ -1,0 +1,15 @@
+import re
+
+file_path = "check_bot_diagnostics.py"
+
+with open(file_path, "r", encoding="utf-8") as f:
+    content = f.read()
+
+# Удаляем старую однопараметрную версию функции
+pattern_old_def = r"(?s)async\s+def\s+send_admin_message\s*\s*text\s*:\s*str\s*\s*:\s*\n\s+.*?(?=\n\S|\Z)"
+content_new = re.sub(pattern_old_def, "", content)
+
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(content_new)
+
+print("✅ Старая версия send_admin_message удалена.")

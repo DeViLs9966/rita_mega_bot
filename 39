@@ -1,0 +1,83 @@
+import re
+import os
+
+FILES = ["rita_main.py", "check_bot_diagnostics.py"]
+
+# Код, который добавим в начало каждого файла, если там нет nest_asyncio
+PREAMBLE = """
+import nest_asyncio
+nest_asyncio.apply()
+
+import asyncio
+
+def safe_get_parent(obj):
+    if hasattr(obj, 'parent'):
+        return obj.parent
+    return None
+
+def safe_async_run(coro):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop and loop.is_running():
+        nest_asyncio.apply()
+        return asyncio.create_task(coro)
+    else:
+        return asyncio.run(coro)
+"""
+
+def fix_parent_attribute(content):
+    # Заменяем все obj.parent на safe_get_parent(obj)
+    # Регулярка ищет <слово>.parent и заменяет на safe_get_parent(<слово>)
+    # Пример: message.parent -> safe_get_parent(message)
+    pattern = re.compile(r'(\b[\w_]+\b)\.parent')
+    content = pattern.sub(r'safe_get_parent(\1)', content)
+    return content
+
+def fix_asyncio_run(content):
+    # Заменяем asyncio.run(main()) на safe_async_run(main())
+    content = re.sub(r'asyncio\.run(main)', r'safe_async_run(\1)', content)
+    return content
+
+def add_preamble(content):
+    # Если в файле уже есть 'nest_asyncio' - не добавляем
+    if "nest_asyncio" not in content:
+        # Добавляем в самое начало
+        return PREAMBLE.lstrip('\n') + '\n\n' + content
+    return content
+
+def backup_file(filename):
+    backup_name = filename + ".bak"
+    if not os.path.exists(backup_name):
+        with open(filename, "r", encoding="utf-8") as f:
+            data = f.read()
+        with open(backup_name, "w", encoding="utf-8") as f:
+            f.write(data)
+        print(f"[Backup] Создан файл резервной копии: {backup_name}")
+    else:
+        print(f"[Backup] Резервная копия уже существует: {backup_name}")
+
+def process_file(filename):
+    print(f"[Patch] Обработка файла: {filename}")
+    backup_file(filename)
+    with open(filename, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    content = add_preamble(content)
+    content = fix_parent_attribute(content)
+    content = fix_asyncio_run(content)
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(content)
+    print(f"[Patch] Файл {filename} успешно обновлён.\n")
+
+def main():
+    for file in FILES:
+        if not os.path.exists(file):
+            print(f"[Error] Файл не найден: {file}")
+            continue
+        process_file(file)
+
+if __name__ == "__main__":
+    main()

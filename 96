@@ -1,0 +1,75 @@
+import re
+import os
+import shutil
+
+# Твои файлы для проверки и исправления
+FILES_TO_CHECK = [
+    "check_bot_diagnostics.py",
+    "rita_main.py"
+]
+
+# Константа с твоим Telegram ID для вставки
+TELEGRAM_ADMIN_ID = "558079551"
+
+def backup_file(path):
+    backup_path = path + ".bak"
+    if not os.path.exists(backup_path):
+        shutil.copy2(path, backup_path)
+        print(f"⚠️ Бэкап создан: {backup_path}")
+    else:
+        print(f"⚠️ Бэкап уже существует: {backup_path}")
+
+def fix_send_admin_message_calls(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    original_content = content
+
+    # Регулярка для поиска вызовов send_admin_message (await send_admin_message(...) или send_admin_message(...))
+    # Захватывает имя функции, аргументы и учитывает async/await
+    pattern = re.compile(
+        r"(?P<prefix>\bawait\s+)?send_admin_message\s*(?P<args>[^)]*)",
+        re.MULTILINE
+    )
+
+    def replacer(match):
+        prefix = match.group("prefix") or ""
+        args = match.group("args").strip()
+
+        # Проверим, есть ли уже chat_id — если первый аргумент — число или переменная TELEGRAM_ADMIN_ID
+        args_list = [arg.strip() for arg in args.split(",")] if args else []
+
+        # Если нет аргументов — добавим chat_id и заглушку текста
+        if len(args_list) == 0:
+            new_args = f"{TELEGRAM_ADMIN_ID}, 'ℹ️ Автоматическая вставка chat_id и текста'"
+        # Если первый аргумент не похоже на chat_id (число или TELEGRAM_ADMIN_ID), то вставим chat_id
+        elif not re.match(r"^\d+$", args_list[0]) and args_list[0] != TELEGRAM_ADMIN_ID:
+            new_args = f"{TELEGRAM_ADMIN_ID}, {args}"
+        else:
+            new_args = args  # Всё хорошо, менять не нужно
+
+        # Добавим await, если отсутствует, так как функция асинхронная
+        if prefix == "":
+            prefix = "await "
+
+        return f"{prefix}send_admin_message({new_args})"
+
+    new_content = pattern.sub(replacer, content)
+
+    if new_content != original_content:
+        backup_file(file_path)
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        print(f"✅ Вызовы send_admin_message в {file_path} исправлены.")
+    else:
+        print(f"ℹ️ В файле {file_path} вызовов send_admin_message, требующих исправления, не найдено.")
+
+def main():
+    for file_path in FILES_TO_CHECK:
+        if os.path.exists(file_path):
+            fix_send_admin_message_calls(file_path)
+        else:
+            print(f"❌ Файл {file_path} не найден.")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,68 @@
+from pathlib import Path
+
+target_file = Path("check_bot_diagnostics.py")
+
+# Создание резервной копии
+backup = target_file.with_suffix(".py.bak_pathfix")
+if not backup.exists():
+    target_file.replace(backup)
+    print(f"✅ Создан бэкап: {backup.name}")
+else:
+    print(f"ℹ️ Бэкап уже существует: {backup.name}")
+
+# Безопасный код, который нужно вставить
+safe_code_block = '''
+from pathlib import Path
+
+def safe_get_current_file():
+    try:
+        return Path(__file__).resolve()
+    except Exception:
+        return Path.cwd() / "check_bot_diagnostics.py"
+
+def safe_get_parent(path_obj):
+    try:
+        return path_obj.parent
+    except Exception:
+        return Path.cwd()
+
+CURRENT_PATH = safe_get_current_file()
+MAIN_SCRIPT_PATH = safe_get_parent(CURRENT_PATH) / "rita_main.py"
+DIAGNOSTICS_SCRIPT_PATH = CURRENT_PATH
+
+print("[DEBUG] CURRENT_PATH =", CURRENT_PATH)
+print("[DEBUG] MAIN_SCRIPT_PATH =", MAIN_SCRIPT_PATH)
+print("[DEBUG] DIAGNOSTICS_SCRIPT_PATH =", DIAGNOSTICS_SCRIPT_PATH)
+'''.strip() + '\n\n'
+
+# Чтение исходного файла
+with backup.open("r", encoding="utf-8") as f:
+    lines = f.readlines()
+
+new_lines = []
+removed = False
+
+# Удаляем старые строки с MAIN_SCRIPT_PATH и DIAGNOSTICS_SCRIPT_PATH
+for line in lines:
+    if "MAIN_SCRIPT_PATH" in line or "DIAGNOSTICS_SCRIPT_PATH" in line:
+        removed = True
+        continue
+    new_lines.append(line)
+
+# Вставляем безопасный код после импортов
+insert_index = 0
+for i, line in enumerate(new_lines):
+    if line.strip().startswith("import ") or line.strip().startswith("from "):
+        insert_index = i + 1
+
+new_lines.insert(insert_index, safe_code_block)
+
+# Сохраняем обновлённый файл
+with target_file.open("w", encoding="utf-8") as f:
+    f.writelines(new_lines)
+
+print("✅ Путь MAIN_SCRIPT_PATH и DIAGNOSTICS_SCRIPT_PATH безопасно обновлён.")
+if removed:
+    print("🧹 Старые строки удалены.")
+else:
+    print("⚠️ Старые строки не найдены — возможно, они были удалены ранее.")

@@ -1,0 +1,46 @@
+import os
+import shutil
+from pathlib import Path
+
+def move_logs_to_logs_folder():
+    logs_folder = Path("logs")
+    if not logs_folder.exists():
+        logs_folder.mkdir()
+        print("[INFO] Папка 'logs' создана.")
+    else:
+        print("[INFO] Папка 'logs' уже существует.")
+
+    # Логи и папки, которые нужно переместить
+    log_files_and_dirs = [
+        "check_bot_diagnostics.log",
+        "diagnostics.log",
+        "rita_diagnostics.log",
+        "rita_bot.log",
+        "fixer.log",
+        "runtime.log",
+        ".last_push_error.log",
+        "logs/rita_bot.log",
+        # если есть другие файлы/папки - добавь сюда
+    ]
+
+    for item in log_files_and_dirs:
+        src = Path(item)
+        if src.exists():
+            dest = logs_folder / src.name
+            try:
+                if src.is_dir():
+                    # Если папка, перемещаем содержимое
+                    for sub_item in src.iterdir():
+                        shutil.move(str(sub_item), str(logs_folder / sub_item.name))
+                    src.rmdir()
+                    print(f"[INFO] Содержимое папки {src} перемещено в {logs_folder}")
+                else:
+                    shutil.move(str(src), str(dest))
+                    print(f"[INFO] Файл {src} перемещён в {dest}")
+            except Exception as e:
+                print(f"[ERROR] Ошибка при перемещении {src}: {e}")
+        else:
+            print(f"[WARN] {src} не найден, пропускаем.")
+
+if __name__ == "__main__":
+    move_logs_to_logs_folder()

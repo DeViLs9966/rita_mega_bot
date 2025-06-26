@@ -1,0 +1,75 @@
+import re
+from pathlib import Path
+
+FILE_PATH = Path("check_bot_diagnostics.py")
+
+# Новая корректная версия send_admin_message
+NEW_FUNC = '''
+import aiohttp
+import logging
+
+async def send_admin_message(chat_id: int, text: str):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True,
+    }
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload) as resp:
+                if resp.status == 200:
+                    logging.info(f"✅ Сообщение отправлено админу: {text}")
+                else:
+                    resp_text = await resp.text()
+                    logging.error(f"❌ Ошибка при отправке админу: {resp.status} {resp_text}")
+    except Exception as e:
+        logging.error(f"❌ Исключение при отправке админу: {e}")
+'''
+
+def patch_file():
+    text = FILE_PATH.read_text(encoding="utf-8")
+
+    # Удаляем все определения send_admin_message (асинхронные и синхронные)
+    # простой, но мощный regex для определения функций с названием send_admin_message
+    pattern = re.compile(
+        r'async def send_admin_message\s*.*?:(?:\n(?:[ \t]+.*))*', 
+        flags=re.MULTILINE
+    )
+    text_new = pattern.sub("", text)
+
+    # Также удалим дублирующие импорты aiohttp и logging, чтобы не дублировать
+    # Но для простоты — просто добавим новые импорты ниже
+
+    # Удалим лишние пустые строки после удаления функций
+    text_new = re.sub(r'\n{3,}', '\n\n', text_new)
+
+    # Добавим корректную функцию в конец файла
+    text_new = text_new.strip() + "\n\n" + NEW_FUNC.strip() + "\n"
+
+    # Проверим и исправим вызовы send_admin_message
+    # Заменим все вызовы с 3 аргументами на 2 (удалим первый аргумент если он не TELEGRAM_ADMIN_ID)
+    # Для упрощения только вызовы с 3 аргументами (например, send_admin_message(bot, chat_id, text)) заменим на send_admin_message(chat_id, text)
+
+    # Регулярка для вызовов send_admin_message с 3 аргументами:
+    # send_admin_message\s*\s*[^,]+,\s*([^,]+),\s*([^)]+)
+    # заменим на send_admin_message(\1, \2)
+
+    text_new = re.sub(
+        r'send_admin_message\s*\s*[^,]+,\s*([^,]+),\s*([^)]+)',
+        r'send_admin_message(\1, \2)',
+        text_new
+    )
+
+    # Добавим импорты aiohttp и logging, если их нет
+    if "import aiohttp" not in text_new:
+        text_new = "import aiohttp\n" + text_new
+    if "import logging" not in text_new:
+        text_new = "import logging\n" + text_new
+
+    FILE_PATH.write_text(text_new, encoding="utf-8")
+    print("✅ Патч успешно применён к check_bot_diagnostics.py!")
+
+if __name__ == "__main__":
+    patch_file()

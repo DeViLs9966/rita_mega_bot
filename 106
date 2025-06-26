@@ -1,0 +1,54 @@
+import os
+import re
+from pathlib import Path
+
+BASE_DIR = Path.home() / "rita_mega_bot"
+LOGS_DIR = BASE_DIR / "logs"
+CHECK_SCRIPT = BASE_DIR / "check_bot_diagnostics.py"
+
+def ensure_logs_dir():
+    if not LOGS_DIR.exists():
+        print(f"[INFO] Создаём папку логов: {LOGS_DIR}")
+        LOGS_DIR.mkdir(parents=True)
+    else:
+        print(f"[INFO] Папка логов уже существует: {LOGS_DIR}")
+
+def patch_check_bot_diagnostics():
+    if not CHECK_SCRIPT.exists():
+        print(f"[ERROR] Скрипт {CHECK_SCRIPT} не найден!")
+        return
+    
+    with open(CHECK_SCRIPT, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Заменить все упоминания 'bot.log' на 'logs/bot.log'
+    content_new = re.sub(r'(["\'])bot\.log\1', r'"logs/bot.log"', content)
+
+    # Найти все вызовы open(...) с 'latin-1' и заменить на 'utf-8'
+    content_new = re.sub(r"open([^)]+),\s*encoding=['\"]latin-1['\"]", r"open(\1, encoding='utf-8')", content_new)
+
+    # Если в оригинале были просто open('logs/bot.log', 'r') без encoding - добавить encoding
+    content_new = re.sub(
+        r'open("logs/bot\.log")\s*,\s*["\']r["\']',
+        r'open(\1, "r", encoding="utf-8")',
+        content_new
+    )
+
+    if content != content_new:
+        backup_path = CHECK_SCRIPT.with_suffix(".py.bak")
+        print(f"[INFO] Создаём резервную копию {backup_path}")
+        with open(backup_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        with open(CHECK_SCRIPT, "w", encoding="utf-8") as f:
+            f.write(content_new)
+        print(f"[INFO] Патч применён в {CHECK_SCRIPT}")
+    else:
+        print("[INFO] Изменений не найдено, патч не применён.")
+
+def main():
+    ensure_logs_dir()
+    patch_check_bot_diagnostics()
+
+if __name__ == "__main__":
+    main()

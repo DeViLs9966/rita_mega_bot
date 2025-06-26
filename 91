@@ -1,0 +1,102 @@
+import os
+import re
+import logging
+
+# Функция-обёртка для асинхронной send_admin_message с обработкой ошибок
+def debug_send_admin_message_wrapper(func):
+    async def wrapper(*args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+        except Exception as e:
+            logging.error(f"Ошибка в send_admin_message: {e}")
+            return None
+    return wrapper
+
+def patch_file(filename):
+    BACKUP = filename + ".bak"
+
+    # Создаём бэкап, если нет
+    if not os.path.exists(BACKUP):
+        with open(filename, "r", encoding="utf-8") as f:
+            content = f.read()
+        with open(BACKUP, "w", encoding="utf-8") as f:
+            f.write(content)
+        print(f"✅ Бэкап создан: {BACKUP}")
+    else:
+        print(f"⚠️ Бэкап уже существует: {BACKUP}")
+
+    with open(filename, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    # Проверяем есть ли уже обёртка
+    wrapper_code = (
+        "def debug_send_admin_message_wrapper(func):\n"
+        "    async def wrapper(*args, **kwargs):\n"
+        "        try:\n"
+        "            return await func(*args, **kwargs)\n"
+        "        except Exception as e:\n"
+        "            import logging\n"
+        "            logging.error(f\"Ошибка в send_admin_message: {e}\")\n"
+        "            return None\n"
+        "    return wrapper\n"
+    )
+    if any("def debug_send_admin_message_wrapper" in line for line in lines):
+        print(f"ℹ️ В файле {filename} обёртка уже присутствует, пропускаем вставку.")
+        return
+
+    # Вставляем обёртку в начало файла (после шапки импорта)
+    insert_pos = 0
+    for i, line in enumerate(lines):
+        if line.strip() and not line.startswith("#") and not line.startswith("import"):
+            insert_pos = i
+            break
+
+    lines.insert(insert_pos, wrapper_code + "\n")
+
+    # Находим и модифицируем определение send_admin_message, чтобы обернуть его
+    pattern = re.compile(r"async def send_admin_message.*:")
+    new_lines = []
+    inside_func = False
+    func_name = ""
+    indent = ""
+    for line in lines:
+        if pattern.match(line.strip()):
+            inside_func = True
+            func_name = "send_admin_message"
+            indent = line[:len(line) - len(line.lstrip())]
+            new_lines.append(line)
+            continue
+
+        if inside_func:
+            # ищем конец функции — строку без отступа или с меньшим отступом
+            if line.strip() == "" or len(line) - len(line.lstrip()) <= len(indent):
+                inside_func = False
+                new_lines.append(line)
+            else:
+                new_lines.append(line)
+        else:
+            new_lines.append(line)
+
+    # Оборачиваем send_admin_message в @debug_send_admin_message_wrapper
+    for i, line in enumerate(new_lines):
+        if pattern.match(line.strip()):
+            # Проверим, есть ли уже декоратор перед функцией
+            if i > 0 and new_lines[i-1].strip() == "@debug_send_admin_message_wrapper":
+                break
+            new_lines.insert(i, "@debug_send_admin_message_wrapper\n")
+            break
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.writelines(new_lines)
+
+    print(f"✅ Обёртка успешно вставлена в {filename}.")
+
+
+if __name__ == "__main__":
+    files_to_patch = ["check_bot_diagnostics.py", "rita_main.py"]
+    for file in files_to_patch:
+        if os.path.exists(file):
+            print(f"📄 Проверяем файл: {file}")
+            patch_file(file)
+        else:
+            print(f"❌ Файл {file} не найден.")

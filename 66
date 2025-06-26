@@ -1,0 +1,86 @@
+import re
+from pathlib import Path
+
+FILE = Path("check_bot_diagnostics.py")
+BAK = FILE.with_suffix(".bak")
+
+def backup():
+    if BAK.exists():
+        print(f"Бэкап уже существует: {BAK}")
+    else:
+        FILE.rename(BAK)
+        print(f"Создан бэкап: {BAK}")
+
+def fix_function_def(text):
+    pattern = re.compile(
+        r"(async def|def) send_admin_message.*?:.*?(?=(^\s*(async def|def) |\Z))",
+        re.DOTALL | re.MULTILINE
+    )
+    replacement = """
+import aiohttp
+import logging
+
+async def send_admin_message(chat_id: int, text: str):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text}
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload) as resp:
+                if resp.status == 200:
+                    logging.info(f"✅ Сообщение отправлено админу: {text}")
+                else:
+                    error_text = await resp.text()
+                    logging.error(f"❌ Ошибка при отправке админу: {error_text}")
+    except Exception as e:
+        logging.error(f"❌ Исключение при отправке админу: {e}")
+"""
+    text = re.sub(pattern, replacement, text)
+    return text
+
+def fix_calls(text):
+    # Эта регулярка находит все вызовы send_admin_message с 1 или менее аргументами
+    pattern_single_arg = re.compile(r"await send_admin_message\s*([^,]+)\s*")
+    # Заменим на правильный вызов с двумя аргументами (chat_id, text)
+    def repl(m):
+        # Если вызывается с одной переменной, заменим на: await send_admin_message(TELEGRAM_ADMIN_ID, <that_arg>)
+        arg = m.group(1)
+        return f"await send_admin_message(TELEGRAM_ADMIN_ID, {arg})"
+
+    text = pattern_single_arg.sub(repl, text)
+
+    # На всякий случай исправим и вызовы без аргументов (на 0), если есть
+    pattern_no_args = re.compile(r"await send_admin_message\s*")
+    text = pattern_no_args.sub(f"await send_admin_message(TELEGRAM_ADMIN_ID, 'Сообщение')", text)
+
+    return text
+
+def add_imports(text):
+    lines = text.splitlines()
+    imports = {"import aiohttp", "import logging"}
+    present_imports = set(l for l in lines if l.strip().startswith("import ") or l.strip().startswith("from "))
+    missing_imports = imports - present_imports
+    if not missing_imports:
+        return text
+    # вставим после первых импортов или в начало
+    insert_pos = 0
+    for i, line in enumerate(lines):
+        if line.startswith("import ") or line.startswith("from "):
+            insert_pos = i + 1
+    for imp in reversed(sorted(missing_imports)):
+        lines.insert(insert_pos, imp)
+    return "\n".join(lines)
+
+def main():
+    if not FILE.exists():
+        print("Файл не найден")
+        return
+    backup()
+    text = BAK.read_text(encoding="utf-8")
+    text = fix_function_def(text)
+    text = fix_calls(text)
+    text = add_imports(text)
+    FILE.write_text(text, encoding="utf-8")
+    print("Патч применён успешно")
+
+if __name__ == "__main__":
+    main()

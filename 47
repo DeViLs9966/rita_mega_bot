@@ -1,0 +1,33 @@
+from pathlib import Path
+import re
+
+def fix_safe_path_join_and_urls(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Исправляем "safe_path_join(a, b)" в строках на Path("a") / "b"
+    def repl_path(match):
+        args = match.group(1).split(",")
+        args = [arg.strip().strip('"').strip("'") for arg in args]
+        if len(args) == 2:
+            return f'Path("{args[0]}") / "{args[1]}"'
+        else:
+            # если аргументов больше или меньше, вернуть без изменений
+            return match.group(0)
+
+    content = re.sub(r'safe_path_join([^)]+)', repl_path, content)
+
+    # Исправляем https://api-safe_path_join(...) на корректный URL https://api-inference.huggingface.co
+    content = re.sub(
+        r'https://api-safe_path_join[^)]*',
+        'https://api-inference.huggingface.co',
+        content
+    )
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    print(f"Файл {file_path} успешно отпатчен.")
+
+# Запуск патча на check_bot_diagnostics.py
+fix_safe_path_join_and_urls("check_bot_diagnostics.py")

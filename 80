@@ -1,0 +1,36 @@
+import re
+import os
+
+FILE = "check_bot_diagnostics.py"
+BACKUP = FILE + ".bak"
+
+if not os.path.exists(BACKUP):
+    with open(FILE, "r", encoding="utf-8") as f:
+        original = f.read()
+    with open(BACKUP, "w", encoding="utf-8") as f:
+        f.write(original)
+    print("✅ Бэкап создан")
+
+with open(FILE, "r", encoding="utf-8") as f:
+    content = f.read()
+
+# Ищем все вызовы send_admin_message без TELEGRAM_ADMIN_ID
+pattern = re.compile(r'await send_admin_message\s*\s*(?!TELEGRAM_ADMIN_ID)([^)]*)')
+
+matches = pattern.findall(content)
+
+if matches:
+    with open("problem_calls.txt", "w", encoding="utf-8") as f:
+        for m in matches:
+            f.write(m.strip() + "\n")
+    print(f"⚠️ Найдено {len(matches)} проблемных вызовов send_admin_message без chat_id. Они сохранены в problem_calls.txt")
+else:
+    print("✅ Все вызовы send_admin_message имеют chat_id.")
+
+# Попытка автоматической замены:
+fixed = pattern.sub(r'await send_admin_message(TELEGRAM_ADMIN_ID, \1)', content)
+
+with open(FILE, "w", encoding="utf-8") as f:
+    f.write(fixed)
+
+print("✅ Попытка автоматической замены выполнена.")

@@ -1,0 +1,34 @@
+# patch_fix_send_admin_message.py
+
+file_path = "check_bot_diagnostics.py"
+
+new_function = '''
+async def send_admin_message(chat_id: int, text: str):
+    import aiohttp
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {"chat_id": chat_id, "text": text}
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload) as resp:
+                if resp.status == 200:
+                    log_info(f"✅ Сообщение отправлено админу: {text}")
+                else:
+                    log_error(f"❌ Ошибка при отправке админу: {await resp.text()}")
+    except Exception as e:
+        log_error(f"❌ Исключение при отправке админу: {e}")
+'''
+
+with open(file_path, "r", encoding="utf-8") as f:
+    code = f.read()
+
+import re
+
+# Удалим старую версию функции send_admin_message (если есть)
+pattern = r"async def send_admin_message[^\n]*:.*?(?=\n\S|\Z)"
+code_updated = re.sub(pattern, new_function.strip(), code, flags=re.DOTALL)
+
+# Запишем обновлённый код обратно в файл
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(code_updated)
+
+print("✅ Функция send_admin_message успешно обновлена.")

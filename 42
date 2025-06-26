@@ -1,0 +1,65 @@
+import os
+import re
+import shutil
+
+MAIN_FILE = "rita_main.py"
+DIAGNOSTIC_FILE = "check_bot_diagnostics.py"
+BACKUP_SUFFIX = ".bak_patchfix"
+
+def backup_file(filename):
+    backup_name = filename + BACKUP_SUFFIX
+    if not os.path.exists(backup_name):
+        shutil.copy2(filename, backup_name)
+        print(f"[Backup] Создана резервная копия: {backup_name}")
+    else:
+        print(f"[Backup] Резервная копия уже существует: {backup_name}")
+
+def add_safe_path_join(content):
+    if "def safe_path_join" not in content:
+        code = '''
+def safe_path_join(parent, child):
+    import pathlib
+    try:
+        if parent is None:
+            return pathlib.Path(child)
+        else:
+            return pathlib.Path(parent) / child
+    except Exception:
+        return pathlib.Path(child)
+'''
+        return code + "\n" + content
+    return content
+
+def patch_file(filename):
+    print(f"[Patch] Обработка файла: {filename}")
+    backup_file(filename)
+
+    with open(filename, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Добавляем safe_path_join
+    content = add_safe_path_join(content)
+    print("[Patch] Добавлена функция safe_path_join")
+
+    # Заменяем конструкции safe_get_parent(...) / "something"
+    # на safe_path_join(safe_get_parent(...), "something")
+
+    pattern = re.compile(r"safe_get_parent([^)]+)\s*/\s*([\"'].*?[\"'])")
+    content_new = pattern.sub(r"safe_path_join(safe_get_parent(\1), \2)", content)
+
+    if content_new != content:
+        print("[Patch] Заменены выражения safe_get_parent(...) / \"...\" на safe_path_join(...)")
+    content = content_new
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    print(f"[Patch] Файл {filename} успешно обновлён.")
+
+def main():
+    patch_file(MAIN_FILE)
+    patch_file(DIAGNOSTIC_FILE)
+    print("[Patch] Все патчи применены.")
+
+if __name__ == "__main__":
+    main()

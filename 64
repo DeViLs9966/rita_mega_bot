@@ -1,0 +1,27 @@
+import re
+from pathlib import Path
+
+FILE = Path("check_bot_diagnostics.py")
+
+def fix_send_admin_calls():
+    code = FILE.read_text(encoding="utf-8")
+
+    # Регулярка для await send_admin_message с ровно 1 аргументом (без запятой)
+    # Захватим chat_id и вставим дефолтный текст
+    pattern = re.compile(r'(await\s+send_admin_message\s*\s*([^)]+?)\s*)')
+
+    def repl(m):
+        full_call = m.group(1)
+        arg1 = m.group(2)
+        # Если в аргументах нет запятой — 1 аргумент
+        if ',' not in arg1:
+            return f'await send_admin_message({arg1}, "Сообщение отсутствует")'
+        return full_call  # не меняем, если больше аргументов
+
+    new_code = pattern.sub(repl, code)
+
+    FILE.write_text(new_code, encoding="utf-8")
+    print("✅ Исправлены вызовы send_admin_message с недостаточным числом аргументов.")
+
+if __name__ == "__main__":
+    fix_send_admin_calls()

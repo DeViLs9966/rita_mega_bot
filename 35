@@ -1,0 +1,26 @@
+import re
+import shutil
+
+files_to_fix = ['rita_main.py', 'check_bot_diagnostics.py']
+
+def backup_file(filename):
+    backup_name = filename + '.bak'
+    shutil.copyfile(filename, backup_name)
+    print(f"[Backup] Создан файл резервной копии: {backup_name}")
+
+def add_send_admin_message_function(content):
+    if 'async def send_admin_message' not in content:
+        addition = """
+
+async def send_admin_message(bot, chat_id, text):
+    try:
+        await bot.send_message(chat_id=chat_id, text=text)
+    except Exception as e:
+        print(f"Ошибка при отправке сообщения админу: {e}")
+"""
+        return content + addition
+    return content
+
+def fix_send_admin_message_calls(content):
+    # Добавить await перед send_admin_message, если его нет
+    pattern = re.compile(r'(?<!await\s)(send_admin_message\s*

@@ -1,0 +1,72 @@
+import re
+import logging
+from pathlib import Path
+
+logging.basicConfig(
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+# Путь к логам и исходным скриптам
+LOG_FILE = Path("check_bot_diagnostics.log")  # Лог с ошибками
+SCRIPTS = [Path("rita_main.py"), Path("check_bot_diagnostics.py")]
+
+def find_encoding_errors(log_path):
+    """
+    Парсим лог на поиск ошибок кодировки.
+    Возвращаем список найденных ошибок и, если возможно, номера строк или подсказки.
+    """
+    errors = []
+    pattern = re.compile(r"'latin-1' codec can't encode characters in position (\d+)-(\d+): ordinal not in range256")
+    with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            match = pattern.search(line)
+            if match:
+                start, end = int(match.group(1)), int(match.group(2))
+                errors.append((start, end))
+    return errors
+
+def fix_file_encoding(path, error_positions):
+    """
+    Открываем файл, пытаемся найти и исправить проблемные позиции.
+    В данном случае заменяем проблемные символы на '?' или экранируем.
+    """
+    logger.info(f"Обрабатываем файл: {path}")
+    try:
+        content = path.read_text(encoding="utf-8", errors="replace")
+    except Exception as e:
+        logger.error(f"Не удалось прочитать файл {path}: {e}")
+        return False
+
+    # Простейшая логика — заменить все не ASCII символы на '?'
+    fixed_content = ''.join((c if ord(c) < 128 else '?') for c in content)
+
+    if fixed_content != content:
+        backup_path = path.with_suffix(path.suffix + ".backup")
+        path.rename(backup_path)
+        logger.info(f"Создан бэкап исходного файла: {backup_path}")
+        path.write_text(fixed_content, encoding="utf-8")
+        logger.info(f"Файл {path} исправлен и сохранён.")
+        return True
+    else:
+        logger.info(f"Файл {path} не требует исправлений.")
+        return False
+
+if __name__ == "__main__":
+    if not LOG_FILE.exists():
+        logger.error(f"Лог-файл не найден: {LOG_FILE}")
+        exit(1)
+
+    errors = find_encoding_errors(LOG_FILE)
+    if not errors:
+        logger.info("Ошибок кодировки в логе не найдено.")
+    else:
+        logger.info(f"Найдено {len(errors)} ошибок кодировки в логе.")
+        # Для каждого скрипта попытаться исправить
+        for script in SCRIPTS:
+            fixed = fix_file_encoding(script, errors)
+            if fixed:
+                logger.info(f"Исправления применены к {script}")
+            else:
+                logger.info(f"Исправления не требуются для {script}")

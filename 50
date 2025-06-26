@@ -1,0 +1,94 @@
+import re
+from pathlib import Path
+
+FILE_PATH = "check_bot_diagnostics.py"
+BACKUP_PATH = FILE_PATH + ".bak"
+
+# --- Создаём резервную копию ---
+def backup_file():
+    with open(FILE_PATH, "r", encoding="utf-8") as f:
+        content = f.read()
+    with open(BACKUP_PATH, "w", encoding="utf-8") as f:
+        f.write(content)
+    print(f"Резервная копия создана: {BACKUP_PATH}")
+
+# --- Вставляем в начало файла функции safe_get_parent, safe_path_join и safe_send_message ---
+def insert_safe_functions(content):
+    safe_funcs = """
+import asyncio
+from pathlib import Path
+
+def safe_get_parent(path):
+    try:
+        p = Path(path)
+        return p.parent
+    except Exception:
+        return None
+
+def safe_path_join(base, *paths):
+    try:
+        base_path = Path(base) if base is not None else None
+        if base_path is None:
+            return None
+        for p in paths:
+            if p is None:
+                return None
+            base_path = base_path / p
+        return base_path
+    except Exception:
+        return None
+
+async def safe_send_message(bot, chat_id, text):
+    try:
+        await bot.send_message(chat_id=chat_id, text=text)
+    except RuntimeError as e:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(bot.send_message(chat_id=chat_id, text=text))
+    except Exception as e:
+        print(f"[safe_send_message] Ошибка отправки сообщения: {e}")
+
+"""
+    if "def safe_get_parent(" not in content:
+        return safe_funcs + "\n\n" + content
+    return content
+
+# --- Заменяем все обращения path.parent на safe_get_parent(path) ---
+def replace_parent_calls(content):
+    # Заменим выражения вида: <что-то>.parent -> safe_get_parent(<что-то>)
+    pattern = re.compile(r"(\b[\w\._]+\b)\.parent")
+    content = pattern.sub(r"safe_get_parent(\1)", content)
+    return content
+
+# --- Заменяем все пути с / на safe_path_join ---
+def replace_path_division(content):
+    # Простой паттерн для path / "file" или path / variable
+    pattern = re.compile(r"(\b[\w\._]+\b)\s*/\s*([\w\"']+)")
+    # Заменим на safe_path_join(path, "file")
+    content = pattern.sub(r"safe_path_join(\1, \2)", content)
+    return content
+
+# --- Заменяем все вызовы send_message на safe_send_message ---
+def replace_send_message_calls(content):
+    # Заменим await bot.send_message(...) на await safe_send_message(bot, ...)
+    pattern = re.compile(r"await\s+(\w+)\.send_message(.*?)")
+    content = pattern.sub(r"await safe_send_message(\1, \2)", content)
+    return content
+
+def main():
+    print("Начинаем патчинг check_bot_diagnostics.py ...")
+    backup_file()
+    with open(FILE_PATH, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    content = insert_safe_functions(content)
+    content = replace_parent_calls(content)
+    content = replace_path_division(content)
+    content = replace_send_message_calls(content)
+
+    with open(FILE_PATH, "w", encoding="utf-8") as f:
+        f.write(content)
+    print("Патч применён успешно!")
+
+if __name__ == "__main__":
+    main()

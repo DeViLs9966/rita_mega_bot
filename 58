@@ -1,0 +1,19 @@
+# patch_fix_send_admin_calls.py
+
+file_path = "check_bot_diagnostics.py"
+
+with open(file_path, "r", encoding="utf-8") as f:
+    code = f.read()
+
+import re
+
+# Ищем все вызовы send_admin_message только с 1 аргументом
+pattern = r"await\s+send_admin_message\s*\s*([\"'].*?[\"'])\s*"
+replacement = r"await send_admin_message(TELEGRAM_ADMIN_ID, \1)"
+
+updated_code = re.sub(pattern, replacement, code)
+
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(updated_code)
+
+print("✅ Все вызовы send_admin_message теперь используют TELEGRAM_ADMIN_ID.")

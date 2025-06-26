@@ -1,0 +1,65 @@
+import re
+from pathlib import Path
+
+TELEGRAM_CHAT_ID_VAR = "TELEGRAM_ADMIN_ID"
+
+def fix_send_admin_message_calls(content: str, filename: str) -> str:
+    """
+    Находит вызовы send_admin_message(...) и добавляет TELEGRAM_ADMIN_ID как первый аргумент,
+    если его не хватает.
+    """
+    pattern = r'await\s+send_admin_message\s*([^)]+?)\s*'
+    matches = list(re.finditer(pattern, content))
+
+    new_content = content
+    offset = 0  # смещение для вставки
+    for match in matches:
+        args = match.group(1)
+        if ',' not in args:  # значит один аргумент — надо добавить chat_id
+            start, end = match.span(1)
+            insert_pos = start + offset
+            replacement = f"{TELEGRAM_CHAT_ID_VAR}, {args.strip()}"
+            new_content = new_content[:insert_pos] + replacement + new_content[end+offset:]
+            offset += len(replacement) - (end - start)
+
+            print(f"✅ Исправлен вызов на строке {new_content[:insert_pos].count(chr(10)) + 1} в {filename}")
+    return new_content
+
+def fix_unmatched_brackets(content: str, filename: str) -> str:
+    """
+    Пробует починить синтаксическую ошибку со скобками (при необходимости).
+    Только для rita_main.py.
+    """
+    lines = content.splitlines()
+    for i, line in enumerate(lines):
+        if i == 80 or i == 81:
+            if line.count('[') > line.count(']') and line.count(')') >= line.count('('):
+                lines[i] += "]"
+                print(f"✅ Закрыта лишняя [ скобка на строке {i+1} в {filename}")
+            elif line.count(')') > line.count('(') and line.count('[') >= line.count(']'):
+                lines[i] = line.replace(')', '', 1)  # удалим лишнюю закрывающую
+                print(f"✅ Удалена лишняя ) скобка на строке {i+1} в {filename}")
+    return "\n".join(lines)
+
+def apply_patch(file_path: Path):
+    content = file_path.read_text(encoding="utf-8")
+    original = content
+
+    content = fix_send_admin_message_calls(content, file_path.name)
+
+    if file_path.name == "rita_main.py":
+        content = fix_unmatched_brackets(content, file_path.name)
+
+    if content != original:
+        backup_path = file_path.with_suffix(file_path.suffix + ".bak")
+        if not backup_path.exists():
+            backup_path.write_text(original, encoding="utf-8")
+            print(f"📦 Сделан бэкап: {backup_path.name}")
+        file_path.write_text(content, encoding="utf-8")
+        print(f"💾 Обновлён файл: {file_path.name}")
+    else:
+        print(f"ℹ️ Изменений не требуется: {file_path.name}")
+
+if __name__ == "__main__":
+    apply_patch(Path("check_bot_diagnostics.py"))
+    apply_patch(Path("rita_main.py"))

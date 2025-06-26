@@ -1,0 +1,82 @@
+import os
+import re
+import asyncio
+
+def backup_file(filepath):
+    backup_path = filepath + '.bak'
+    if not os.path.exists(backup_path):
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        with open(backup_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print(f'[Backup] Создан файл резервной копии: {backup_path}')
+    else:
+        print(f'[Backup] Резервная копия уже существует: {backup_path}')
+
+def fix_name_attribute_issue(content):
+    # Исправляем обращения .name у переменных, которые могут быть строками
+    # Заменяем pattern: var.name -> getattr(var, "name", None)
+    # Для безопасности ищем '.name' и заменяем на getattr(...), если вызов не в функции с проверкой типа
+    
+    # Регулярка на поиск '.name'
+    pattern = re.compile(r'(\w+)\.name')
+    
+    def replacer(match):
+        var = match.group(1)
+        return f'getattr({var}, "name", None)'
+    
+    new_content = pattern.sub(replacer, content)
+    return new_content
+
+def fix_asyncio_run(content):
+    # Ищем вызовы asyncio.run(main()) и оборачиваем в функцию safe_async_run()
+    # Добавляем в начало определение safe_async_run()
+
+    if 'def safe_async_run(' not in content:
+        safe_run_func = """
+import asyncio
+
+def safe_async_run(coro):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:  # Нет запущенного event loop
+        loop = None
+    if loop and loop.is_running():
+        import nest_asyncio
+        nest_asyncio.apply()
+        return asyncio.create_task(coro)
+    else:
+        return asyncio.run(coro)
+"""
+        content = safe_run_func + '\n' + content
+
+    # Заменяем asyncio.run(main()) на safe_async_run(main())
+    content = re.sub(r'asyncio\.run(main)', r'safe_async_run(\1)', content)
+
+    return content
+
+def process_file(filepath):
+    print(f'[Patch] Обработка файла: {filepath}')
+    backup_file(filepath)
+
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    content = fix_name_attribute_issue(content)
+    content = fix_asyncio_run(content)
+
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(content)
+
+    print(f'[Patch] Файл {filepath} успешно обновлён.')
+
+def main():
+    files = ['rita_main.py', 'check_bot_diagnostics.py']
+    for file in files:
+        if os.path.exists(file):
+            process_file(file)
+        else:
+            print(f'[Warn] Файл не найден: {file}')
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,94 @@
+import os
+import sys
+import re
+import logging
+import traceback
+from dotenv import load_dotenv
+
+# --- Глобальный обработчик необработанных исключений ---
+def log_exceptions(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    logging.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+
+sys.excepthook = log_exceptions
+
+# --- Логирование ---
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+# --- Загрузка .env и проверка ключей ---
+load_dotenv()
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID") or os.getenv("ADMIN_TELEGRAM_ID")
+
+missing = []
+for varname, val in [("TELEGRAM_BOT_TOKEN", TELEGRAM_BOT_TOKEN),
+                     ("OPENAI_API_KEY", OPENAI_API_KEY),
+                     ("HF_API_TOKEN", HF_API_TOKEN),
+                     ("ADMIN_CHAT_ID", ADMIN_CHAT_ID)]:
+    if not val:
+        missing.append(varname)
+
+if missing:
+    logger.error(f"[ERROR] Отсутствуют ключи: {', '.join(missing)}")
+    sys.exit(1)
+
+try:
+    ADMIN_CHAT_ID = int(ADMIN_CHAT_ID)
+except Exception:
+    logger.error("[ERROR] ADMIN_CHAT_ID должен быть числом!")
+    sys.exit(1)
+
+logger.info(f"Telegram Token: {TELEGRAM_BOT_TOKEN[:10]}... (длина {len(TELEGRAM_BOT_TOKEN)})")
+logger.info(f"OpenAI Key: {OPENAI_API_KEY[:10]}... (длина {len(OPENAI_API_KEY)})")
+logger.info(f"HuggingFace Token: {HF_API_TOKEN[:10]}... (длина {len(HF_API_TOKEN)})")
+logger.info(f"Admin Chat ID: {ADMIN_CHAT_ID}")
+
+# --- Функция для исправления незакрытых f-строк ---
+def fix_fstrings(code: str) -> str:
+    """
+    Ищет незакрытые f-строки и закрывает их кавычкой.
+    Работает по всей длине текста.
+    """
+    # Паттерн ищет строки начинающиеся с f' или f" которые не закрыты
+    pattern = re.compile(r'(f)(["\'])(.*?)(?<!\\)(?<!["\'])$', re.DOTALL | re.MULTILINE)
+    
+    def replacer(m):
+        prefix, quote, body = m.group(1), m.group(2), m.group(3)
+        fixed = f'{prefix}{quote}{body}{quote}'
+        logger.info("[FIX] Добавлена закрывающая кавычка для f-строки")
+        return fixed
+    
+    return pattern.sub(replacer, code)
+
+# --- Исправление файла по пути ---
+def fix_file(path: str):
+    if not os.path.isfile(path):
+        logger.warning(f"[WARN] Файл не найден: {path}")
+        return
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+        fixed_content = fix_fstrings(content)
+        if fixed_content != content:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(fixed_content)
+            logger.info(f"[FIX] Исправлены незакрытые f-строки в {path}")
+        else:
+            logger.info(f"[INFO] В файле {path} незакрытых f-строк не найдено")
+    except Exception as e:
+        logger.error(f"[ERROR] Ошибка при исправлении файла {path}: {e}")
+
+if __name__ == "__main__":
+    files = ["rita_main.py", "check_bot_diagnostics.py"]
+    for file in files:
+        fix_file(file)
+    logger.info("[DONE] Патч исправления ошибок выполнен.")

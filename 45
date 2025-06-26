@@ -1,0 +1,47 @@
+import re
+from pathlib import Path
+
+def patch_check_bot_diagnostics(filepath: Path):
+    text = filepath.read_text(encoding='utf-8')
+
+    # Шаблоны проблемных строк — ищем вызовы Path("...safe_path_join(...)...")
+    pattern_logs = r'LOG_FILE\s*=\s*Path"safe_path_join(.*?)"'
+    pattern_main_script = r'MAIN_SCRIPT\s*=\s*Path"(/?safe_path_join.*?)"'
+
+    # Исправляем LOG_FILE
+    def repl_logs(m):
+        parts = m.group(1)  # Внутри safe_path_join(...)
+        # Разбираем аргументы, убирая пробелы и кавычки
+        args = [p.strip().strip('"').strip("'") for p in parts.split(",")]
+        # Собираем корректный вызов safe_path_join
+        return f'LOG_FILE = safe_path_join({", ".join(f\'"{a}"\' for a in args)}, "rita_bot.log")'
+
+    text = re.sub(pattern_logs, repl_logs, text)
+
+    # Исправляем MAIN_SCRIPT
+    def repl_main(m):
+        # Тут сложнее — берём строку внутри Path(...)
+        content = m.group(1)
+        # Уберём вызовы safe_path_join, оставим просто аргументы
+        # Пример: safe_path_join(mnt, data)/safe_path_join(rita_mega_bot, rita_main.py)
+        # Разобьём по '/' и парсим каждый safe_path_join
+        parts = content.split('/')
+        args_all = []
+        for part in parts:
+            m_args = re.match(r'safe_path_join(.*?)', part)
+            if m_args:
+                args = [a.strip().strip('"').strip("'") for a in m_args.group(1).split(",")]
+                args_all.extend(args)
+        # Собираем вызов
+        return f'MAIN_SCRIPT = safe_path_join({", ".join(f\'"{a}"\' for a in args_all)})'
+
+    text = re.sub(pattern_main_script, repl_main, text)
+
+    # Сохраняем исправлённый файл
+    backup_path = filepath.with_suffix('.bak_patch')
+    filepath.rename(backup_path)  # Создаём резервную копию
+    filepath.write_text(text, encoding='utf-8')
+    print(f'[PATCHER] Файл {filepath.name} исправлен, резервная копия: {backup_path.name}')
+
+if __name__ == "__main__":
+    patch_check_bot_diagnostics(Path("check_bot_diagnostics.py"))

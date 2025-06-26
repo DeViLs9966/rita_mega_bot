@@ -1,0 +1,76 @@
+import re
+import sys
+
+INPUT_FILE = "check_bot_diagnostics.py"
+OUTPUT_FILE = "check_bot_diagnostics_fixed.py"
+
+def fix_indentation_mix(lines):
+    """
+    Исправляет смешение табуляций и пробелов на пробелы (4 пробела).
+    """
+    fixed_lines = []
+    for line in lines:
+        # Заменим табы на 4 пробела
+        line = line.replace('\t', '    ')
+        fixed_lines.append(line)
+    return fixed_lines
+
+def fix_unfinished_assignments(lines):
+    """
+    Исправляет незаполненные переменные (например, TELEGRAM_ADMIN_ID =) на временные заглушки.
+    Можно потом заменить на реальные значения вручную.
+    """
+    fixed_lines = []
+    pattern = re.compile(r"^\s*(\w+)\s*=\s*$")  # Переменная с пустым присваиванием
+
+    for line in lines:
+        m = pattern.match(line)
+        if m:
+            var_name = m.group(1)
+            # Вставляем временное значение в зависимости от переменной
+            if "TOKEN" in var_name.upper():
+                replacement = f'{var_name} = "YOUR_TELEGRAM_BOT_TOKEN_HERE"\n'
+            elif "ID" in var_name.upper():
+                replacement = f'{var_name} = 123456789  # <-- Вставь свой ID Telegram\n'
+            else:
+                replacement = f'{var_name} = None  # <-- временно\n'
+            fixed_lines.append(replacement)
+        else:
+            fixed_lines.append(line)
+    return fixed_lines
+
+def fix_common_syntax_issues(lines):
+    """
+    Исправляет некоторые распространённые синтаксические ошибки.
+    """
+    fixed_lines = []
+    for line in lines:
+        # Например, удалим строки с очевидными обрывками импортов (если есть)
+        if re.match(r'^\s*import\s+[^\s]+>$', line):
+            # Пропустим такие строки
+            continue
+        fixed_lines.append(line)
+    return fixed_lines
+
+def main():
+    try:
+        with open(INPUT_FILE, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+    except Exception as e:
+        print(f"Ошибка чтения файла {INPUT_FILE}: {e}")
+        sys.exit(1)
+
+    lines = fix_indentation_mix(lines)
+    lines = fix_unfinished_assignments(lines)
+    lines = fix_common_syntax_issues(lines)
+
+    try:
+        with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+        print(f"Файл успешно исправлен и сохранён как {OUTPUT_FILE}")
+        print("После этого проверь его и замени заглушки реальными значениями.")
+    except Exception as e:
+        print(f"Ошибка записи файла {OUTPUT_FILE}: {e}")
+
+if __name__ == "__main__":
+    main()

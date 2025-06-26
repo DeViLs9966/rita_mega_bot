@@ -1,0 +1,43 @@
+import re
+from pathlib import Path
+
+FILE_PATH = Path("check_bot_diagnostics.py")
+
+def fix_send_admin_message_calls_and_def():
+    content = FILE_PATH.read_text(encoding="utf-8")
+
+    # Исправляем вызовы send_admin_message(..., ...) -> send_admin_message(...)
+    # Регулярка ищет вызовы с двумя аргументами в круглых скобках
+    content_new = re.sub(
+        r"send_admin_message\s*\s*[^,]+,\s*(.+?)\s*",
+        r"send_admin_message(\1)",
+        content,
+        flags=re.DOTALL
+    )
+
+    # Исправляем определение функции send_admin_message
+    # Заменяем любую сигнатуру на async def send_admin_message(text: str):
+    content_new = re.sub(
+        r"async def send_admin_message\s*.*?:",
+        "async def send_admin_message(text: str):",
+        content_new,
+        flags=re.DOTALL
+    )
+
+    # Добавим в тело функции простейшую реализацию с логом (если хочется)
+    # Здесь можно расширить, но лучше вручную после патча подставить реальную логику
+    content_new = re.sub(
+        r"(async def send_admin_messagetext: str:\s*)([ \t]*)([^a]+)",  # ищем тело после объявления
+        r"\1\2# TODO: вставь свою логику отправки сообщения админу\n\2log_info(f\"[ADMIN MESSAGE] {text}\")\n",
+        content_new,
+        flags=re.DOTALL
+    )
+
+    if content != content_new:
+        FILE_PATH.write_text(content_new, encoding="utf-8")
+        print("[PATCH] send_admin_message исправлена в check_bot_diagnostics.py")
+    else:
+        print("[PATCH] Изменений не найдено. Возможно, патч уже применён.")
+
+if __name__ == "__main__":
+    fix_send_admin_message_calls_and_def()

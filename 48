@@ -1,0 +1,80 @@
+import os
+from pathlib import Path
+import re
+import shutil
+
+TARGET_FILE = 'check_bot_diagnostics.py'
+BACKUP_FILE = TARGET_FILE + '.bak_patchfix'
+
+SAFE_GET_PARENT_CODE = '''
+from pathlib import Path
+
+def safe_get_parent(path_str):
+    try:
+        p = Path(path_str)
+        if p.parent:
+            return p.parent
+        else:
+            return Path('.')
+    except Exception:
+        return Path('.')
+'''
+
+SAFE_SEND_MESSAGE_CODE = '''
+import asyncio
+async def safe_send_message(bot, chat_id, text):
+    try:
+        await bot.send_message(chat_id, text)
+    except RuntimeError as e:
+        if 'different event loop' in str(e):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(bot.send_message(chat_id, text))
+            loop.close()
+        else:
+            raise
+'''
+
+def backup_file():
+    if os.path.exists(TARGET_FILE):
+        shutil.copy2(TARGET_FILE, BACKUP_FILE)
+        print(f'Резервная копия создана: {BACKUP_FILE}')
+    else:
+        print(f'Файл {TARGET_FILE} не найден!')
+
+def insert_code_if_missing(content, code_snippet, pattern):
+    if re.search(pattern, content) is None:
+        print(f'Вставляю код для патча: {pattern}')
+        return code_snippet.strip() + '\n\n' + content
+    else:
+        print(f'Код с патчем {pattern} уже присутствует')
+        return content
+
+def fix_path_operations(content):
+    # Простая замена проблем с NoneType / str (пример)
+    # Можно расширить под конкретные случаи из логов
+    content = re.sub(r"(\w+)\s*/\s*'([^']*)'", r"safe_get_parent(\1) / '\2'", content)
+    return content
+
+def main():
+    if not os.path.exists(TARGET_FILE):
+        print(f'Файл {TARGET_FILE} не найден, выходим.')
+        return
+
+    backup_file()
+
+    with open(TARGET_FILE, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    content = insert_code_if_missing(content, SAFE_GET_PARENT_CODE, r'def safe_get_parent')
+    content = insert_code_if_missing(content, SAFE_SEND_MESSAGE_CODE, r'async def safe_send_message')
+
+    content = fix_path_operations(content)
+
+    with open(TARGET_FILE, 'w', encoding='utf-8') as f:
+        f.write(content)
+
+    print(f'Патч применён к {TARGET_FILE} успешно.')
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,47 @@
+import re
+import os
+
+TELEGRAM_ADMIN_ID = 558079551  # замени на твой ID, если другой
+
+files = ["check_bot_diagnostics.py", "rita_main.py"]
+
+for filename in files:
+    if not os.path.exists(filename):
+        print(f"❌ Файл {filename} не найден, пропускаю.")
+        continue
+
+    with open(filename, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    def replacer(match):
+        args = match.group(1).strip()
+        if args == "":
+            # вызов без аргументов
+            return f"await send_admin_message({TELEGRAM_ADMIN_ID}, 'ℹ️ Сообщение автоматически добавлено.')"
+        else:
+            # посчитаем аргументы
+            parts = [a.strip() for a in args.split(",") if a.strip()]
+            if len(parts) == 1:
+                # один аргумент — считаем, что это текст, добавим chat_id
+                return f"await send_admin_message({TELEGRAM_ADMIN_ID}, {parts[0]})"
+            else:
+                # два и более — считаем нормальным, не трогаем
+                return match.group(0)
+
+    new_content, count = re.subn(
+        r"await\s+send_admin_message\s*([^)]*)",
+        replacer,
+        content,
+    )
+
+    if count > 0:
+        backup = filename + ".bak"
+        if not os.path.exists(backup):
+            os.rename(filename, backup)
+            print(f"⚠️ Создан бэкап {backup}")
+
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        print(f"✅ В {filename} исправлено {count} вызовов send_admin_message")
+    else:
+        print(f"ℹ️ В {filename} вызовов send_admin_message, требующих исправления, не найдено.")

@@ -1,0 +1,6 @@
+FILE = "check_bot_diagnostics.py"
+
+with open(FILE, "r", encoding="utf-8") as f:
+    for i, line in enumerate(f.readlines(), 1):
+        if "send_admin_message" in line:
+            print(f"{i:4}: {line.strip()}")

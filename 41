@@ -1,0 +1,138 @@
+import os
+import re
+import shutil
+
+# Файлы
+MAIN_FILE = "rita_main.py"
+DIAGNOSTIC_FILE = "check_bot_diagnostics.py"
+
+BACKUP_SUFFIX = ".bak_patchfix"
+
+def backup_file(filename):
+    backup_name = filename + BACKUP_SUFFIX
+    if not os.path.exists(backup_name):
+        shutil.copy2(filename, backup_name)
+        print(f"[Backup] Создана резервная копия: {backup_name}")
+    else:
+        print(f"[Backup] Резервная копия уже существует: {backup_name}")
+
+def patch_rita_main():
+    print(f"[Patch] Обработка файла: {MAIN_FILE}")
+    backup_file(MAIN_FILE)
+
+    with open(MAIN_FILE, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # 1) Добавляем или проверяем safe_get_parent
+    if "def safe_get_parent" not in content:
+        safe_get_parent_code = '''
+def safe_get_parent(path):
+    import pathlib
+    try:
+        p = pathlib.Path(path)
+        return p.parent
+    except Exception:
+        return None
+'''
+        content = safe_get_parent_code + "\n" + content
+        print("[Patch] Добавлена функция safe_get_parent")
+
+    # 2) Исправляем все случаи .parent у строк (пример)
+    # Паттерн: заменяем выражения вида some_string.parent -> safe_get_parent(some_string)
+    # чтобы избежать ошибки
+    content = re.sub(r"(\w+)\.parent", r"safe_get_parent(\1)", content)
+
+    # 3) Исправляем вызов asyncio.run(main()) - чтобы не запускать внутри уже запущенного цикла
+    # Заменяем, если есть прямой вызов asyncio.run(main())
+    if "asyncio.run(main())" in content:
+        replacement = '''
+import asyncio
+import sys
+
+def run_main():
+    try:
+        if sys.version_info >= (3, 7):
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                import nest_asyncio
+                nest_asyncio.apply()
+        asyncio.run(main())
+    except RuntimeError:
+        # Если asyncio.run() внутри уже запущенного цикла, вызываем иначе
+        loop = asyncio.get_event_loop()
+        loop.create_task(main())
+'''
+        content = re.sub(r"asyncio\.runmain", "run_main()", content)
+        content = replacement + "\n\n" + content
+        print("[Patch] Исправлен запуск asyncio.run(main()) на безопасный run_main()")
+
+    with open(MAIN_FILE, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    print(f"[Patch] Файл {MAIN_FILE} успешно обновлён.")
+
+def patch_check_bot_diagnostics():
+    print(f"[Patch] Обработка файла: {DIAGNOSTIC_FILE}")
+    backup_file(DIAGNOSTIC_FILE)
+
+    with open(DIAGNOSTIC_FILE, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # 1) Добавляем safe_get_parent если нет
+    if "def safe_get_parent" not in content:
+        safe_get_parent_code = '''
+def safe_get_parent(path):
+    import pathlib
+    try:
+        p = pathlib.Path(path)
+        return p.parent
+    except Exception:
+        return None
+'''
+        content = safe_get_parent_code + "\n" + content
+        print("[Patch] Добавлена функция safe_get_parent")
+
+    # 2) Исправляем .parent у строк аналогично
+    content = re.sub(r"(\w+)\.parent", r"safe_get_parent(\1)", content)
+
+    # 3) Исправляем ошибки с asyncio.run() внутри цикла
+    # Аналогично замена вызовов asyncio.run(main()) на безопасный run_main()
+    if "asyncio.run(main())" in content:
+        replacement = '''
+import asyncio
+import sys
+
+def run_main():
+    try:
+        if sys.version_info >= (3, 7):
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                import nest_asyncio
+                nest_asyncio.apply()
+        asyncio.run(main())
+    except RuntimeError:
+        loop = asyncio.get_event_loop()
+        loop.create_task(main())
+'''
+        content = re.sub(r"asyncio\.runmain", "run_main()", content)
+        content = replacement + "\n\n" + content
+        print("[Patch] Исправлен запуск asyncio.run(main()) на безопасный run_main()")
+
+    # 4) Дополнительно: в диагностике часто бывает проблема с event loop в callback Telegram,
+    # Можно добавить импорт nest_asyncio в самый верх
+    if "import nest_asyncio" not in content:
+        content = "import nest_asyncio\nnest_asyncio.apply()\n\n" + content
+        print("[Patch] Добавлен импорт и вызов nest_asyncio для event loop")
+
+    with open(DIAGNOSTIC_FILE, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    print(f"[Patch] Файл {DIAGNOSTIC_FILE} успешно обновлён.")
+
+def main():
+    patch_rita_main()
+    patch_check_bot_diagnostics()
+    print("[Patch] Все патчи применены.")
+
+if __name__ == "__main__":
+    main()

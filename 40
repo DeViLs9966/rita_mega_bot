@@ -1,0 +1,57 @@
+import os
+import re
+import shutil
+
+UTILS_FILENAME = "utils_async.py"
+FILES_TO_PATCH = ["rita_main.py", "check_bot_diagnostics.py"]
+
+UTILS_CODE = '''import nest_asyncio
+import asyncio
+
+nest_asyncio.apply()
+
+def safe_get_parent(obj):
+    if hasattr(obj, 'parent'):
+        return obj.parent
+    return None
+
+def safe_async_run(coro):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop and loop.is_running():
+        nest_asyncio.apply()
+        return asyncio.create_task(coro)
+    else:
+        return asyncio.run(coro)
+'''
+
+def backup_file(filename):
+    backup_name = filename + ".bak"
+    if not os.path.exists(backup_name):
+        shutil.copy2(filename, backup_name)
+        print(f"[Backup] Резервная копия создана: {backup_name}")
+    else:
+        print(f"[Backup] Резервная копия уже существует: {backup_name}")
+
+def patch_imports_and_async_run(filename):
+    with open(filename, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Добавить импорт в начало, если его нет
+    import_line = "from utils_async import safe_get_parent, safe_async_run"
+    if import_line not in content:
+        # Вставить импорт после первой docstring или после первой строки, если нет docstring
+        pattern_docstring = re.compile(r'^(\"\"\".*?\"\"\"|\'\'\'.*?\'\'\')', re.DOTALL)
+        m = pattern_docstring.match(content)
+        if m:
+            insert_pos = m.end()
+            content = content[:insert_pos] + "\n" + import_line + "\n" + content[insert_pos:]
+        else:
+            content = import_line + "\n" + content
+        print(f"[Patch] Добавлен импорт в {filename}")
+
+    # Заменить все вызовы asyncio.run(...) на safe_async_run(...)
+    # Аккуратно: ищем только вызовы asyncio.run( с пробелами
+    new_content = re.sub(r'asyncio\.run

@@ -1,0 +1,69 @@
+import os
+import re
+
+SCRIPT_PATH = "check_bot_diagnostics.py"
+BACKUP_PATH = SCRIPT_PATH + ".bak"
+
+# Шаг 1: Бэкап
+if not os.path.exists(BACKUP_PATH):
+    os.rename(SCRIPT_PATH, BACKUP_PATH)
+    print(f"✅ Бэкап создан: {BACKUP_PATH}")
+else:
+    print(f"⚠️ Бэкап уже существует: {BACKUP_PATH}")
+
+with open(BACKUP_PATH, "r", encoding="utf-8") as f:
+    code = f.read()
+
+# Шаг 2: Убедимся, что импорт asyncio есть
+if "import asyncio" not in code:
+    first_import = re.search(r"import\s+\w+", code)
+    if first_import:
+        insert_index = first_import.end()
+        code = code[:insert_index] + "\nimport asyncio" + code[insert_index:]
+    else:
+        code = "import asyncio\n" + code
+
+# Шаг 3: Полная замена функции report_loop на безопасную
+report_loop_pattern = re.compile(
+    r"(async\s+def\s+report_loop\s*\s*:\s*\n)(?:.*?\n)+?(?=\s*async\s+def|\s*def|\s*class|\Z)",
+    re.DOTALL
+)
+
+replacement_report_loop = r"""\1    interval_seconds = 3600
+    while True:
+        internet_status = "OK" if check_internet() else "OFF"
+        message = f"[Отчёт] Система работает. Интернет: {internet_status}"
+        if not message.strip():
+            message = "[Отчёт] Пустое сообщение, отправляю стандартный текст."
+        await send_admin_message(TELEGRAM_ADMIN_ID, message)
+        await asyncio.sleep(interval_seconds)\n"""
+
+code, count = report_loop_pattern.subn(replacement_report_loop, code)
+
+if count > 0:
+    print("✅ report_loop заменён на безопасную версию.")
+else:
+    print("⚠️ report_loop не найден — проверь вручную.")
+
+# Шаг 4: Поиск и исправление вызовов send_admin_message без аргументов
+send_admin_calls = re.findall(r"\bsend_admin_message\s*(.*?)", code)
+fix_count = 0
+
+for match in send_admin_calls:
+    if "," not in match:
+        # Добавим TELEGRAM_ADMIN_ID и переменную message
+        original = f"send_admin_message({match})"
+        fixed = f"send_admin_message(TELEGRAM_ADMIN_ID, {match})"
+        code = code.replace(original, fixed)
+        fix_count += 1
+
+if fix_count > 0:
+    print(f"✅ Исправлено {fix_count} вызовов send_admin_message с недостающими аргументами.")
+else:
+    print("ℹ️ Все вызовы send_admin_message уже корректны.")
+
+# Шаг 5: Сохранение
+with open(SCRIPT_PATH, "w", encoding="utf-8") as f:
+    f.write(code)
+
+print("✅ Патч успешно применён к check_bot_diagnostics.py.")

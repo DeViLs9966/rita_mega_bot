@@ -1,0 +1,18 @@
+import re
+
+FILE = "check_bot_diagnostics.py"
+
+with open(FILE, "r", encoding="utf-8") as f:
+    lines = f.readlines()
+
+pattern = re.compile(r'await send_admin_message\s*(.*?)')
+
+found = False
+for i, line in enumerate(lines):
+    matches = pattern.findall(line)
+    for m in matches:
+        print(f"Line {i+1}: send_admin_message({m.strip()})")
+        found = True
+
+if not found:
+    print("❌ Вызовов send_admin_message с await не найдено.")

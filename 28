@@ -1,0 +1,43 @@
+import os
+import shutil
+import re
+
+FILES = ["rita_main.py", "check_bot_diagnostics.py"]
+
+SEND_ADMIN_FUNC_CODE = """
+import asyncio
+
+async def send_admin_message(bot, chat_id, text):
+    try:
+        await bot.send_message(chat_id=chat_id, text=text)
+    except RuntimeError as e:
+        if 'different event loop' in str(e):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(bot.send_message(chat_id=chat_id, text=text))
+            loop.close()
+        else:
+            raise
+"""
+
+def backup_file(filepath):
+    backup_path = filepath + ".bak"
+    shutil.copy(filepath, backup_path)
+    print(f"[Backup] Создан файл резервной копии: {backup_path}")
+
+def fix_name_attributes(content):
+    # Паттерн для поиска .name
+    # Заменяем var.name -> getattr(var, 'name', str(var))
+    pattern = re.compile(r'(\w+)\.name')
+    new_content, count = pattern.subn(lambda m: f"getattr({m.group(1)}, 'name', str({m.group(1)}))", content)
+    return new_content, count
+
+def add_send_admin_func(content):
+    if "async def send_admin_message" not in content:
+        content += "\n\n" + SEND_ADMIN_FUNC_CODE.strip() + "\n"
+        return content, True
+    return content, False
+
+def fix_send_admin_calls(content):
+    # Ищем вызовы send_admin_message( без await и добавляем await
+    pattern = re.compile(r'(?<!await\s)(send_admin_message

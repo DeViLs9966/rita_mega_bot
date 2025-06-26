@@ -1,0 +1,40 @@
+import os
+import shutil
+
+FILES = ["rita_main.py", "check_bot_diagnostics.py"]
+
+PATCH_CODE = '''
+import logging
+
+try:
+    original_send_admin_message = send_admin_message
+except NameError:
+    original_send_admin_message = None
+
+async def send_admin_message(chat_id=None, text=None):
+    if chat_id is None or text is None:
+        logging.error(f"[send_admin_message] Ошибка вызова: chat_id={{chat_id}}, text={{text}}")
+        return
+    if original_send_admin_message:
+        return await original_send_admin_message(chat_id, text)
+    else:
+        logging.error("[send_admin_message] Оригинальная функция send_admin_message не найдена")
+'''
+
+def backup_file(filepath):
+    backup_path = filepath + ".bak"
+    if not os.path.exists(backup_path):
+        shutil.copy2(filepath, backup_path)
+        print(f"✅ Бэкап создан: {backup_path}")
+    else:
+        print(f"⚠️ Бэкап уже существует: {backup_path}")
+
+def patch_file(filepath):
+    with open(filepath, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Удаляем старое определение send_admin_message (если есть)
+    import re
+    # Простое удаление любого определения async def send_admin_message(...)
+    content_new = re.sub(
+r"async def send_admin_message"

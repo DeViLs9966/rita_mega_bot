@@ -1,0 +1,30 @@
+import re
+import shutil
+import sys
+import os
+
+# Пути к файлам, которые надо исправить
+FILES_TO_FIX = ['rita_main.py', 'check_bot_diagnostics.py']
+
+SEND_ADMIN_FUNC = """
+
+async def send_admin_message(bot, chat_id, text):
+    try:
+        await bot.send_message(chat_id=chat_id, text=text)
+    except Exception as e:
+        print(f"Ошибка при отправке сообщения админу: {e}")
+"""
+
+def backup_file(filepath):
+    backup_path = filepath + '.bak'
+    shutil.copyfile(filepath, backup_path)
+    print(f'[Backup] Создан файл резервной копии: {backup_path}')
+
+def add_send_admin_message_function(content):
+    if 'async def send_admin_message' not in content:
+        print('  [Patch] Добавляем функцию send_admin_message')
+        return content + SEND_ADMIN_FUNC
+    return content
+
+def fix_send_admin_message_calls(content):
+    pattern = re.compile(r'(?<!await\s)(send_admin_message\s*

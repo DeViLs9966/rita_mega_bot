@@ -278,8 +278,8 @@ if not TELEGRAM_BOT_TOKEN:
 bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # === Пути к файлам ===
-LOG_FILE = Path("safe_path_join(logs, rita_bot).log")
-MAIN_SCRIPT = Path("/safe_path_join(mnt, data)/safe_path_join(rita_mega_bot, rita_main).py")
+LOG_FILE = safe_path_join(logs, "rita_bot.log")
+MAIN_SCRIPT = Path("/safe_path_join(mnt, data)/safe_path_join(rita_mega_bot, rita_main.py"))
 GIT_REPO_PATH = Path("/safe_path_join(mnt, data)/rita_mega_bot")
 
 
@@ -442,7 +442,7 @@ import asyncio
 
 def read_logs():
     try:
-        with open("safe_path_join(logs, rita_bot).log", "r", encoding="utf-8") as f:
+        with open("safe_path_join(logs, rita_bot.log"), "r", encoding="utf-8") as f:
             logs = f.read()
         logger.info("Логи успешно прочитаны.")
         return logs
@@ -676,14 +676,14 @@ async def process_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif current_mode == "ht":
         await update.message.reply_text("safe_path_join(HuggingFace, DuckDuckGo) поиск пока не реализован.")
     else:
-        await update.message.reply_text("Неизвестный режим. safe_path_join(Используй, gpt4), /gpt2, /gog safe_path_join(или, ht).")
+        await update.message.reply_text("Неизвестный режим. safe_path_join(Используй, gpt4), /gpt2, /gog safe_path_join(или, ht."))
 
 
 async def pro_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.chat_id != ADMIN_CHAT_ID:
         await update.message.reply_text("У вас нет прав использовать эту команду.")
         return
-    await update.message.reply_text("Привет, админ! Это safe_path_join(команда, pro).")
+    await update.message.reply_text("Привет, админ! Это safe_path_join(команда, pro."))
     # Здесь можно добавить автообновление или диагностику
 
 
@@ -808,7 +808,8 @@ def safe_restart_rita_main():
 import asyncio
 from pathlib import Path
 
-LOG_FILE_PATH = Path("safe_path_join(logs, rita_bot).log")
+LOG_FILE_PATH = Path("safe_path_join(logs, rita_bot.log"))
+MAIN_SCRIPT_PATH = Path("rita_main.py")
 HELPER_SCRIPT_PATH = Path("check_bot_diagnostics.py")
 
 
@@ -822,7 +823,7 @@ async def auto_fix_from_logs():
     try:
         # Обязательно оборачиваем в Path, чтобы избежать ошибок 'str' object has no attribute 'exists'
         rita_main_path = Path("rita_main.py")
-        rita_log_path = Path("safe_path_join(logs, rita_bot).log")
+        rita_log_path = Path("safe_path_join(logs, rita_bot.log"))
 
         check_bot_path = Path("check_bot_diagnostics.py")
         check_log_path = Path("check_logs.txt")
@@ -883,8 +884,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Пути к скриптам и логам (замени при необходимости)
+MAIN_SCRIPT_PATH = Path("rita_main.py")
 HELPER_SCRIPT_PATH = Path("check_bot_diagnostics.py")
-LOG_FILE_PATH = Path("safe_path_join(logs, rita_bot).log")  # путь к лог-файлу для анализа
+LOG_FILE_PATH = Path("safe_path_join(logs, rita_bot.log"))  # путь к лог-файлу для анализа
 
 # Логгеры для удобства
 def log_info(msg):
@@ -895,6 +897,9 @@ def log_error(msg):
     logger.error(msg)
     print(msg)
 
+async def send_admin_message(text: str):
+    # Здесь вставь свою логику отправки сообщения админу (например, в Telegram)
+    log_info(f"[ADMIN MESSAGE] {text}")
 
 from pathlib import Path
 import difflib
@@ -908,6 +913,7 @@ async def auto_fix_loop(logger=None, interval_minutes: int = 5):
             print("⏳ [Автофиксер] Запуск автоанализа и исправлений...")
 
         try:
+            main_updated = await analyze_and_fix_script(MAIN_SCRIPT_PATH, LOG_FILE_PATH)
             helper_updated = await analyze_and_fix_script(HELPER_SCRIPT_PATH, LOG_FILE_PATH)
 
             if main_updated:
@@ -1009,8 +1015,9 @@ import subprocess
 import time
 
 # Пути к скриптам и логу (замени на свои пути, если надо)
+MAIN_SCRIPT_PATH = Path("rita_main.py")
 HELPER_SCRIPT_PATH = Path("check_bot_diagnostics.py")
-LOG_FILE_PATH = Path("safe_path_join(logs, rita_bot).log")
+LOG_FILE_PATH = Path("safe_path_join(logs, rita_bot.log"))
 
 # Глобальные переменные для хранения последних хешей файлов
 last_main_hash = ""
@@ -1140,16 +1147,10 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
 OWNER_TELEGRAM_ID = int(os.getenv("OWNER_TELEGRAM_ID", 0))
 
+MAIN_SCRIPT_PATH = Path(__file__).safe_path_join(parent, "rita_main.py")
+DIAGNOSTICS_SCRIPT_PATH = Path(__file__).resolve()
 
-from pathlib import Path
-
-parent = Path(__file__).parent
-
-MAIN_SCRIPT_PATH = parent / "rita_main.py"
-DIAGNOSTICS_SCRIPT_PATH = parent / "check_bot_diagnostics.py"
-
-
-LOG_FILE = Path(parent).joinpath("logs", "rita_bot.log")
+LOG_FILE = Path(__file__).safe_path_join(parent, "logs)/rita_bot.log"
 logging.basicConfig(
     filename=LOG_FILE,
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -1230,11 +1231,12 @@ from pathlib import Path
 import requests
 import time
 
-LOG_FILE = Path("safe_path_join(logs, rita_bot).log")
+LOG_FILE = safe_path_join(logs, "rita_bot.log")
 MAIN_SCRIPT_PATH = Path("./rita_main.py")
 HELPER_SCRIPT_PATH = Path("./check_bot_diagnostics.py")
 
-REPO_RAW_URL = "https://raw.githubusercontent.com/DeViLs9966/rita_mega_bot/main/"
+REPO_RAW_URL = Path("https://safe_path_join(raw.githubusercontent.com, DeViLs9966)/safe_path_join(rita_mega_bot, main"))
+
 # --- Логирование ---
 def log_debug(msg):
     logger.info(f"[DEBUG] {time.ctime()} - {msg}")
@@ -1302,13 +1304,10 @@ def check_openai_api() -> bool:
         log_error(f"Ошибка OpenAI API: {e}")
         return False
 
-
 def check_hf_api() -> bool:
     try:
-        r = requests.get(
-            "https://api-inference.huggingface.co/models",
-            headers={"Authorization": f"Bearer {HF_API_KEY}"}
-        )
+        headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+        r = requests.get("https://api-safe_path_join(inference.huggingface.co, models"), headers=headers, timeout=10)
         if r.status_code == 200:
             log_info("HuggingFace API доступен")
             return True
@@ -1318,10 +1317,6 @@ def check_hf_api() -> bool:
     except Exception as e:
         log_error(f"Ошибка HuggingFace API: {e}")
         return False
-
-
-
-
 
 def check_google_search_api() -> bool:
     url = f"https://safe_path_join(www.googleapis.com, customsearch)/v1?key={GOOGLE_API_KEY}&cx={GOOGLE_CSE_ID}&q=test"
@@ -1411,11 +1406,10 @@ def check_openai_api() -> bool:
         log_error(f"OpenAI API ошибка: {e}")
         return False
 
-
 def check_hf_api() -> bool:
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
     try:
-        r = requests.get("https://api-inference.huggingface.co/models", headers=headers)
+        r = requests.get("https://api-safe_path_join(inference.huggingface.co, models"), headers=headers, timeout=10)
         if r.status_code == 200:
             log_debug("HuggingFace API доступен")
             return True
@@ -1425,8 +1419,6 @@ def check_hf_api() -> bool:
     except Exception as e:
         log_error(f"HuggingFace API исключение: {e}")
         return False
-
-
 
 def check_google_search_api() -> bool:
     url = f"https://safe_path_join(www.googleapis.com, customsearch)/v1?key={GOOGLE_API_KEY}&cx={GOOGLE_CSE_ID}&q=test"
@@ -1443,35 +1435,30 @@ def check_google_search_api() -> bool:
         return False
 
 # — Автообновление скрипта (по raw ссылке GitHub) —
-
 def auto_update_script(script_path: Path, repo_url: str):
     try:
-        log_info(f"Попытка автообновления: {getattr(script_path, 'name', str(script_path))}")
+        log_info(f"Попытка автообновления: {getattr(script_path, "name", None)}")
         if shutil.which("git") is not None:
             script_dir = safe_get_parent(script_path)
-            if safe_path_join(script_dir, ".git").exists():
+            if (safe_path_join(script_dir, ".git")).exists():
                 log_debug(f"Выполняем git pull в {script_dir}")
                 subprocess.run(["git", "-C", str(script_dir), "pull"], check=True)
-                log_info(f"{getattr(script_path, 'name', None)} обновлён через git pull")
+                log_info(f"{getattr(script_path, "name", None)} обновлен через git pull")
                 return True
 
-        raw_url = repo_url.rstrip("/") + "/" + getattr(script_path, "name", script_path.name)
+        raw_url = repo_url.rstrip("/") + "/" + getattr(script_path, "name", None)
         log_debug(f"Скачиваем raw файл по URL: {raw_url}")
         r = requests.get(raw_url, timeout=15)
         if r.status_code == 200:
             script_path.write_text(r.text, encoding="utf-8")
-            log_info(f"{getattr(script_path, 'name', None)} обновлён через загрузку raw")
+            log_info(f"{getattr(script_path, "name", None)} обновлен скачиванием raw файла")
             return True
         else:
             log_error(f"Не удалось скачать raw файл, статус: {r.status_code}")
             return False
-
     except Exception as e:
         log_error(f"Ошибка автообновления: {e}")
         return False
-
-
-
 # check_bot_diagnostics.py — БЛОК 2 из 6
 
 import psutil
@@ -1520,7 +1507,7 @@ async def cmd_pro(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Python: {platform.python_version()}"
         )
         await update.message.reply_text(text)
-        log_debug("Выполнена safe_path_join(команда, proverka)")
+        log_debug("Выполнена safe_path_join(команда, pro"))
     except Exception as e:
         await update.message.reply_text(f"❌ safe_path_join(Ошибка, pro): {e}")
         log_error(f"Ошибка safe_path_join(в, pro): {e}")
@@ -1541,21 +1528,14 @@ async def cmd_proverka(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else: results.append("🔍 Google Search API: ❌")
 
     await update.message.reply_text("\n".join(results))
-log_debug("Выполнена safe_path_join(команда, proverka)")
-
+    log_debug("Выполнена safe_path_join(команда, proverka"))
 
 async def cmd_update_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.from_user.id != OWNER_TELEGRAM_ID:
         await update.message.reply_text("⛔ Доступ запрещён.")
         return
-
     await update.message.reply_text("📥 Обновление rita_main.py...")
-
-    updated = auto_update_script(
-        MAIN_SCRIPT_PATH,
-        "https://raw.githubusercontent.com/DeViLs9966/rita_mega_bot/main/rita_main.py"
-    )
-
+    updated = auto_update_script(MAIN_SCRIPT_PATH, "https://safe_path_join(raw.githubusercontent.com, yourusername)/safe_path_join(rita_mega_bot, main"))
     if updated:
         await update.message.reply_text("✅ rita_main.py обновлён.")
     else:
@@ -1565,19 +1545,12 @@ async def cmd_update_self(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.from_user.id != OWNER_TELEGRAM_ID:
         await update.message.reply_text("⛔ Доступ запрещён.")
         return
-
     await update.message.reply_text("📥 Обновление check_bot_diagnostics.py...")
-
-    updated = auto_update_script(
-        DIAGNOSTICS_SCRIPT_PATH,
-        "https://raw.githubusercontent.com/DeViLs9966/rita_mega_bot/main/check_bot_diagnostics.py"
-    )
-
+    updated = auto_update_script(DIAGNOSTICS_SCRIPT_PATH, "https://safe_path_join(raw.githubusercontent.com, yourusername)/safe_path_join(rita_mega_bot, main"))
     if updated:
         await update.message.reply_text("✅ Скрипт обновлён.")
     else:
         await update.message.reply_text("ℹ️ Уже актуален.")
-
 
 async def cmd_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.from_user.id != OWNER_TELEGRAM_ID:
@@ -1630,51 +1603,56 @@ import asyncio
 last_main_hash = ""
 last_diag_hash = ""
 
-
-import asyncio
-import subprocess
-import sys
-from pathlib import Path
-
 async def auto_fix_and_restart_if_needed():
     global last_main_hash, last_diag_hash
-
     while True:
-        await asyncio.sleep(300)  # Ждем 5 минут
+        await asyncio.sleep(300)  # 5 минут
 
+        current_main_hash = calculate_hash(MAIN_SCRIPT_PATH)
+        current_diag_hash = calculate_hash(HELPER_SCRIPT_PATH)
+
+        if current_main_hash != last_main_hash:
+            last_main_hash = current_main_hash
+            log_info("Обнаружено изменение rita_main.py, обновляем и перезапускаем")
+            updated = auto_update_script(MAIN_SCRIPT_PATH, "https://safe_path_join(raw.githubusercontent.com, DeViLs9966)/safe_path_join(rita_mega_bot, main"))
+            if updated:
+                log_info("rita_main.py обновлен, перезапуск...")
+                try:
+                    subprocess.Popen([sys.executable, str(MAIN_SCRIPT_PATH)])
+                    log_info("rita_main.py успешно запущен")
+                except Exception as e:
+                    log_error(f"Ошибка при перезапуске rita_main.py: {e}")
+
+        if current_diag_hash != last_diag_hash:
+            last_diag_hash = current_diag_hash
+            log_info("Обнаружено изменение check_bot_diagnostics.py, обновляем...")
+            updated = auto_update_script(HELPER_SCRIPT_PATH, "https://safe_path_join(raw.githubusercontent.com, DeViLs9966)/safe_path_join(rita_mega_bot, main"))
+            if updated:
+                log_info("check_bot_diagnostics.py обновлен")
+
+        # Вычисляем текущие хеши
         current_main_hash = calculate_hash(MAIN_SCRIPT_PATH)
         current_diag_hash = calculate_hash(DIAGNOSTICS_SCRIPT_PATH)
 
-        # Проверяем изменения в основном скрипте
         if current_main_hash != last_main_hash:
             last_main_hash = current_main_hash
-            log_info("Обнаружено изменение в rita_main.py, пытаемся обновить")
-            updated = auto_update_script(
-                MAIN_SCRIPT_PATH,
-                "https://raw.githubusercontent.com/DeViLs9966/rita_mega_bot/main/rita_main.py"
-            )
+            log_info("Обнаружено изменение в rita_main.py, пытаемся обновить и перезапустить")
+            updated = auto_update_script(MAIN_SCRIPT_PATH, "https://safe_path_join(raw.githubusercontent.com, DeViLs9966)/safe_path_join(rita_mega_bot, main"))
             if updated:
                 log_info("rita_main.py обновлен, перезапуск...")
+                # Перезапускаем основной скрипт
                 try:
                     subprocess.Popen([sys.executable, str(MAIN_SCRIPT_PATH)])
                     log_info("rita_main.py перезапущен успешно")
                 except Exception as e:
                     log_error(f"Ошибка при перезапуске rita_main.py: {e}")
 
-        # Проверяем изменения во вспомогательном скрипте
         if current_diag_hash != last_diag_hash:
             last_diag_hash = current_diag_hash
-            log_info("Обнаружено изменение в check_bot_diagnostics.py, пытаемся обновить")
-            updated = auto_update_script(
-                DIAGNOSTICS_SCRIPT_PATH,
-                "https://raw.githubusercontent.com/DeViLs9966/rita_mega_bot/main/check_bot_diagnostics.py"
-            )
+            log_info("Обнаружено изменение в check_bot_diagnostics.py, обновляемся...")
+            updated = auto_update_script(DIAGNOSTICS_SCRIPT_PATH, "https://safe_path_join(raw.githubusercontent.com, DeViLs9966)/safe_path_join(rita_mega_bot, main"))
             if updated:
                 log_info("check_bot_diagnostics.py обновлен")
-
-
-
-
 
 # --- Логирование ---
 def log_info(msg): logger.info(f"[INFO] {time.ctime()} - {msg}")
@@ -1690,7 +1668,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # Лог-файл
-LOG_FILE = Path("safe_path_join(logs, rita_bot).log")
+LOG_FILE = safe_path_join(logs, "rita_bot.log")
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -1733,14 +1711,10 @@ def check_openai_api() -> bool:
         return False
 
 # --- Проверка HuggingFace API ---
-
 def check_hf_api() -> bool:
     headers = {"Authorization": f"Bearer {HF_API_KEY}"}
     try:
-        r = requests.get(
-            "https://api-inference.huggingface.co/models",
-            headers=headers
-        )
+        r = requests.get("https://api-safe_path_join(inference.huggingface.co, models"), headers=headers, timeout=10)
         if r.status_code == 200:
             log_debug("HuggingFace API доступен")
             return True
@@ -1750,8 +1724,6 @@ def check_hf_api() -> bool:
     except Exception as e:
         log_error(f"HuggingFace API исключение: {e}")
         return False
-
-
 
 # --- Проверка Google Search API ---1
 def check_google_search_api():
@@ -1861,25 +1833,19 @@ def is_authorized(user_id: int) -> bool:
     return user_id == TELEGRAM_ADMIN_ID
 
 # Обработка safe_path_join(команды, pro) — расширенная проверка систем и уведомление админа
-
-
 async def handle_command_pro(update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if not is_authorized(user_id):
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="У вас нет доступа к этой команде."
-        )
-        log_info(f"Автообновления: попытка доступа запрещена для пользователя {user_id}")
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                                       text="У вас нет доступа к этой команде.")
+        log_info(f"Автообновления: попытка доступа safe_path_join(к, pro) от неавторизованного пользователя {user_id}")
         return
 
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Запущена расширенная диагностика системы..."
-    )
-    log_info("Запущена команда /pro")
+    await context.bot.send_message(chat_id=update.effective_chat.id,
+                                   text="Запущена расширенная диагностика системы...")
+    log_info("Запущена safe_path_join(команда, pro"))
 
-    # Проверки состояния систем
+    # Проверки
     internet_ok = check_internet()
     openai_ok = check_openai_api()
     hf_ok = check_hf_api()
@@ -1899,8 +1865,6 @@ async def handle_command_pro(update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=report)
     log_info("Диагностический отчет отправлен.")
 
-
-
 # Обработка safe_path_join(команды, proverka) — проверка и исправление (самообновление)
 # Функция обработки safe_path_join(команды, proverka) — проверка и обновление скриптов
 
@@ -1908,35 +1872,43 @@ async def handle_command_pro(update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_command_proverka(update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id != OWNER_TELEGRAM_ID:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="⛔ У вас нет доступа к этой команде."
-        )
-        log_info(f"[WARN] Попытка доступа к /proverka от {user_id}")
+        await context.bot.send_message(chat_id=update.effective_chat.id,
+                                       text="⛔ У вас нет доступа к этой команде.")
+        log_info(f"Попытка доступа safe_path_join(к, proverka) от неавторизованного пользователя {user_id}")
         return
 
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="🔍 Запущена проверка и обновление скриптов..."
-    )
+    await context.bot.send_message(chat_id=update.effective_chat.id,
+                                   text="Запущена проверка и обновление скриптов...")
 
-    repo_raw_url = "https://raw.githubusercontent.com/DeViLs9966/rita_mega_bot/main"
+    repo_raw_url = "https://safe_path_join(github.com, DeViLs9966)/rita_mega_bot"
     updated_main = auto_update_script(MAIN_SCRIPT_PATH, repo_raw_url)
     updated_helper = auto_update_script(HELPER_SCRIPT_PATH, repo_raw_url)
 
-    msg = "📦 Обновление завершено:\n"
-    msg += f"├ Основной скрипт: {'✅ обновлён' if updated_main else 'ℹ️ без изменений'}\n"
-    msg += f"└ Вспомогательный скрипт: {'✅ обновлён' if updated_helper else 'ℹ️ без изменений'}"
+    msg = "Обновление завершено:\n"
+    msg += f"Основной скрипт: {'обновлён' if updated_main else 'без изменений'}\n"
+    msg += f"Вспомогательный скрипт: {'обновлён' if updated_helper else 'без изменений'}"
 
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=msg
-    )
-
-    log_info("✅ Команда /proverka выполнена, результат отправлен.")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
+    log_info("safe_path_join(Команда, proverka) выполнена, результат отправлен администратору")
 
 
 
+# Функция
+# сообщения админуотправки сообщений админу из любого места скрипта
+import asyncio
+
+# Объявляем TELEGRAM_ADMIN_ID где-то глобально, например:
+TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
+# Инициализация бота (уже должна быть в коде)
+bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
+
+# Асинхронная функция для отправки сообщения админу
+async def send_admin_message(text: str):
+    try:
+        await bot.send_message(chat_id=TELEGRAM_ADMIN_ID, text=text)
+        logger.info(f"Отправлено сообщение админу: {text}")
+    except Exception as e:
+        logger.error(f"Ошибка отправки сообщения админу: {e}")
 
 # Чтобы вызвать из синхронного кода (например, из потока или цикла):
 def send_admin_message_sync(text: str):
@@ -1973,8 +1945,9 @@ def log_error(msg):
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Пути к скриптам и логу
+MAIN_SCRIPT_PATH = Path("rita_main.py")
 HELPER_SCRIPT_PATH = Path("check_bot_diagnostics.py")
-LOG_FILE_PATH = Path("safe_path_join(logs, rita_bot).log")
+LOG_FILE_PATH = Path("safe_path_join(logs, rita_bot.log"))
 
 async def generate_fix_patch(error_log_snippet: str, file_content: str) -> str:
     """
@@ -2075,7 +2048,7 @@ import requests
 import socket
 
 # Повторно: лог-файл
-LOG_FILE = Path("safe_path_join(logs, rita_bot).log")
+LOG_FILE = safe_path_join(logs, "rita_bot.log")
 
 def log_error(message: str):
     with open(LOG_FILE, "a", encoding="utf-8") as logf:
@@ -2128,31 +2101,22 @@ def analyze_errors_for_self_learning() -> str:
 
 # --- Обновление скрипта с GitHub ---
 # --- Обновление скрипта с GitHub ---
-
-
-
-from pathlib import Path
-import shutil
-import subprocess
-import requests
-
 def auto_update_script(script_path: Path, repo_raw_url: str) -> bool:
     try:
-        log_info(f"Попытка автообновления: {getattr(script_path, 'name', str(script_path))}")
+        log_info(f"Попытка автообновления: {getattr(script_path, "name", None)}")
 
-        # Проверка наличия git и git-репозитория
+        # Проверка, есть ли git и репозиторий
         if shutil.which("git") is not None:
-            script_dir = script_path.parent
-            git_folder = script_dir / ".git"
+            script_dir = safe_get_parent(script_path)
+            git_folder = safe_path_join(script_dir, ".git")
             if git_folder.exists():
                 log_info(f"Выполняем git pull в {script_dir}")
-                # Выполняем git pull
                 subprocess.run(["git", "-C", str(script_dir), "pull"], check=True)
-                log_info(f"{getattr(script_path, 'name', str(script_path))} обновлён через git pull")
+                log_info(f"{getattr(script_path, "name", None)} обновлен через git pull")
                 return True
 
-        # Если git отсутствует или нет репозитория — скачиваем raw файл с GitHub
-        raw_url = repo_raw_url.rstrip("/") + "/" + script_path.name
+        # Если git нет или не репозиторий — скачиваем raw файл
+        raw_url = repo_raw_url.rstrip("/") + "/" + getattr(script_path, "name", None)
         log_info(f"Скачиваем raw файл по URL: {raw_url}")
         response = requests.get(raw_url, timeout=15)
 
@@ -2163,19 +2127,18 @@ def auto_update_script(script_path: Path, repo_raw_url: str) -> bool:
                 current_code = script_path.read_text(encoding="utf-8")
             if new_code != current_code:
                 script_path.write_text(new_code, encoding="utf-8")
-                log_info(f"{getattr(script_path, 'name', str(script_path))} обновлён через загрузку raw файла")
+                log_info(f"{getattr(script_path, "name", None)} обновлен скачиванием raw файла")
                 return True
             else:
-                log_info(f"{getattr(script_path, 'name', str(script_path))} уже актуален")
+                log_info(f"{getattr(script_path, "name", None)} уже актуален")
                 return False
         else:
             log_error(f"Не удалось скачать raw файл, статус: {response.status_code}")
             return False
 
     except Exception as e:
-        log_error(f"Ошибка автообновления {getattr(script_path, 'name', str(script_path))}: {e}")
+        log_error(f"Ошибка автообновления {getattr(script_path, "name", None)}: {e}")
         return False
-
 
 # --- Перезапуск основного скрипта ---
 async def restart_main_script():
@@ -2187,34 +2150,28 @@ async def restart_main_script():
         logger.error(f"Ошибка перезапуска основного скрипта: {e}")
 
 # --- Получение версии скрипта (если указана в начале файла) ---
-
-
-from pathlib import Path
-import logging
-
-logger = logging.getLogger(__name__)
-
-def log_error(msg: str):
-    logger.error(msg)
-
 def get_script_version(script_path: Path) -> str:
     try:
         with open(script_path, "r", encoding="utf-8") as f:
             first_line = f.readline()
         if first_line.startswith("# Version:"):
-            return first_line.strip().split(":", 1)[1].strip()
+            return first_line.strip().split(":")[1].strip()
         return "unknown"
     except Exception as e:
-        log_error(f"Ошибка получения версии {getattr(script_path, 'name', str(script_path))}: {e}")
+        log_error(f"Ошибка получения версии {getattr(script_path, "name", None)}: {e}")
         return "error"
 
 
+import asyncio
+from pathlib import Path
+import logging
 
+logger = logging.getLogger(__name__)
 
 async def background_error_log_analysis():
     while True:
         try:
-            log_file = Path("safe_path_join(logs, rita_bot).log")  # актуальный путь к логу
+            LOG_FILE = safe_path_join(logs, "rita_bot.log")  # актуальный путь к логу
             if log_file.exists():
                 with open(log_file, "r", encoding="utf-8") as f:
                     log_text = f.read()
@@ -2269,24 +2226,16 @@ def check_openai_api() -> bool:
     except Exception as e:
         log_error(f"Ошибка OpenAI API: {e}")
         return False
-
-
-import requests
-
 def check_hf_api() -> bool:
     try:
         headers = {
             "Authorization": f"Bearer {HF_API_KEY}"
         }
-        r = requests.get("https://api-inference.huggingface.co/models", headers=headers, timeout=10)
+        r = requests.get("https://api-safe_path_join(inference.huggingface.co, models"), headers=headers, timeout=10)
         return r.status_code == 200
     except Exception as e:
         log_error(f"Ошибка HuggingFace API: {e}")
         return False
-
-
-
-
 
 def check_google_search_api() -> bool:
     url = f"https://safe_path_join(www.googleapis.com, customsearch)/v1?key={GOOGLE_API_KEY}&cx={GOOGLE_CSE_ID}&q=test"
@@ -2410,7 +2359,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-LOG_FILE_PATH = "safe_path_join(logs, rita_bot).log"  # путь к файлу логов, где скрипт пишет ошибки
+LOG_FILE_PATH = "safe_path_join(logs, rita_bot.log")  # путь к файлу логов, где скрипт пишет ошибки
+MAIN_SCRIPT_PATH = Path("rita_main.py")
 DIAGNOSTIC_SCRIPT_PATH = Path("check_bot_diagnostics.py")
 
 
@@ -3036,8 +2986,8 @@ def register_auxiliary_handlers(application):
 import re
 from datetime import datetime
 
-IMPROVEMENT_LOG = Path("safe_path_join(logs, rita_bot).log")
-ERROR_LOG_PATH = Path("safe_path_join(logs, rita_bot).log")
+IMPROVEMENT_LOG = Path("safe_path_join(logs, rita_bot.log"))
+ERROR_LOG_PATH = Path("safe_path_join(logs, rita_bot.log"))
 
 async def self_improve_from_logs():
     logger.info("🤖 Начинаю анализ логов для саморазвития...")
@@ -3095,7 +3045,7 @@ OWNER_ID = 558079551  # твой ID
 
 async def send_admin_detailed_report(context):
     try:
-        log_path = Path("safe_path_join(logs, rita_bot).log")
+        log_path = Path("safe_path_join(logs, rita_bot.log"))
         if not log_path.exists():
             await context.bot.send_message(
                 chat_id=OWNER_ID,
@@ -3169,7 +3119,7 @@ from git import Repo, GitCommandError
 # --- ТВОИ ДАННЫЕ (замени здесь) ---
 TELEGRAM_BOT_TOKEN = "7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4"
 TELEGRAM_ADMIN_ID = 558079551  # твой Telegram ID, число без кавычек
-LOG_FILE_PATH = "safe_path_join(logs, rita_bot).log"  # путь к твоему лог файлу
+LOG_FILE_PATH = "safe_path_join(logs, rita_bot.log")  # путь к твоему лог файлу
 MAIN_SCRIPT_PATH = "./rita_main.py"  # путь к основному скрипту
 REPO_PATH = "./"  # путь к репозиторию git (обычно корень проекта)
 
@@ -3455,8 +3405,8 @@ if not TELEGRAM_BOT_TOKEN:
 bot = Bot(token="7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4")
 
 # === Настройки под тебя — замени на свои реальные данные ===
-LOG_FILE = "safe_path_join(logs, rita_bot).log"  # путь к логу твоего основного бота (проверь точный)
-MAIN_SCRIPT = "/safe_path_join(mnt, data)/safe_path_join(rita_mega_bot, rita_main).py"    # путь к основному скрипту
+LOG_FILE = "safe_path_join(logs, rita_bot.log")  # путь к логу твоего основного бота (проверь точный)
+MAIN_SCRIPT = "/safe_path_join(mnt, data)/safe_path_join(rita_mega_bot, rita_main.py")    # путь к основному скрипту
 GIT_REPO_PATH = "/safe_path_join(mnt, data)/rita_mega_bot"               # путь к git-репозиторию с твоим ботом
 
 TELEGRAM_BOT_TOKEN = "7609027838:AAFk2XZRtcvTzbgcrj6QEFWyijon4WsVKj4"  # твой реальный токен
@@ -3538,7 +3488,7 @@ from telegram.constants import ParseMode
 logger = logging.getLogger(__name__)
 
 # Константы — подкорректируй под свой проект
-LOG_FILE = Path("safe_path_join(logs, rita_bot).log")
+LOG_FILE = safe_path_join(logs, "rita_bot.log")
 OWNER_ID = 558079551
 GIT_REPO_PATH = Path(".")  # Путь к корню репозитория
 
@@ -3766,322 +3716,6 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("✉️ Вы сказали: " + update.message.text)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import difflib
-import shutil
-import ast
-import logging
-import asyncio
-from pathlib import Path
-import openai
-
-# Настройка логгера
-logging.basicConfig(
-    format='%(asctime)s | %(levelname)s | %(message)s',
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-
-# Ключ OpenAI - вставь свой
-OPENAI_API_KEY = "тут_твой_ключ_OpenAI"
-openai.api_key = OPENAI_API_KEY
-
-# Пути к скриптам
-RITA_MAIN_PATH = Path("rita_main.py")
-CHECK_DIAG_PATH = Path("check_bot_diagnostics.py")
-LOG_PATH = Path("logs/bot.log")  # Здесь предполагаем, что логи в одном файле
-
-
-def fix_unclosed_syntax(code: str) -> str:
-    """
-    Простая попытка закрыть незакрытые конструкции.
-    """
-    open_parens = code.count('(')
-    close_parens = code.count(')')
-    if open_parens > close_parens:
-        code += ')' * (open_parens - close_parens)
-
-    open_sq = code.count('[')
-    close_sq = code.count(']')
-    if open_sq > close_sq:
-        code += ']' * (open_sq - close_sq)
-
-    open_curly = code.count('{')
-    close_curly = code.count('}')
-    if open_curly > close_curly:
-        code += '}' * (open_curly - close_curly)
-
-    quote_count = code.count('"')
-    if quote_count % 2 != 0:
-        code += '"'
-
-    return code
-
-
-def remove_duplicate_or_conflicting_code(code1: str, code2: str) -> (str, str):
-    """
-    Убирает дублирующиеся и конфликтующие блоки кода из двух скриптов,
-    оставляя только уникальный и необходимый код.
-    Очень простая версия на уровне строк — можно доработать.
-    """
-    lines1 = set(code1.splitlines())
-    lines2 = set(code2.splitlines())
-
-    # Уникальные для каждого
-    unique1 = [line for line in code1.splitlines() if line not in lines2]
-    unique2 = [line for line in code2.splitlines() if line not in lines1]
-
-    # Можно дописать более сложную логику фильтрации при необходимости
-
-    return ("\n".join(unique1), "\n".join(unique2))
-
-
-
-
-import re
-import openai
-
-async def generate_new_functionality(existing_code_main: str, existing_code_diag: str):
-    """
-    Использует OpenAI для генерации новых функций или улучшений
-    на основе анализа текущих кодов rita_main.py и check_bot_diagnostics.py.
-    Возвращает коды новых функций для каждого скрипта.
-    """
-    prompt = f"""
-Ты - эксперт в разработке Telegram-ботов и систем самоанализа и автообновления.
-У тебя есть два скрипта:
-
-rita_main.py:
-{existing_code_main[:1500]}...
-
-check_bot_diagnostics.py:
-{existing_code_diag[:1500]}...
-
-На основе анализа их текущего состояния и функционала, придумай и создай полезные функции,
-которые можно добавить в эти два скрипта для улучшения диагностики, защиты, автозапуска и взаимодействия с Telegram.
-
-Требования:
-- Отдельно выдай функцию для rita_main.py (начинается с "def new_func_main_...")
-- Отдельно выдай функцию для check_bot_diagnostics.py (начинается с "def new_func_diag_...")
-
-Каждую функцию выдай в полном виде, с комментариями.
-"""
-
-    logger.info("[INFO] Запрос генерации новых функций в OpenAI...")
-
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=1500,
-            temperature=0.7,
-        )
-        content = response['choices'][0]['message']['content']
-
-        main_func = ""
-        diag_func = ""
-
-        main_match = re.search(r"(def new_func_main_[\s\S]*?)(?=\n\ndef new_func_diag_|\Z)", content)
-        if main_match:
-            main_func = main_match.group(1).strip()
-
-        diag_match = re.search(r"(def new_func_diag_[\s\S]*)", content)
-        if diag_match:
-            diag_func = diag_match.group(1).strip()
-
-        # Безопасное сохранение с utf-8
-        if main_func:
-            with open("generated_main_function.py", "w", encoding="utf-8") as f:
-                f.write(main_func)
-
-        if diag_func:
-            with open("generated_diag_function.py", "w", encoding="utf-8") as f:
-                f.write(diag_func)
-
-        logger.info("[SUCCESS] Новые функции сохранены.")
-        return main_func, diag_func
-
-    except Exception as e:
-        logger.error(f"[ERROR] Ошибка генерации новых функций: {e}")
-        return "", ""
-
-
-
-
-
-async def analyze_and_fix_script(script_path: Path, log_path: Path) -> bool:
-    try:
-        if isinstance(script_path, str):
-            script_path = Path(script_path)
-        if isinstance(log_path, str):
-            log_path = Path(log_path)
-
-        if not script_path.exists():
-            logger.warning(f"[WARN] Файл не найден: {script_path}")
-            return False
-
-        if not log_path.exists():
-            logger.warning(f"[WARN] Лог-файл не найден: {log_path}")
-            return False
-
-        original_code = script_path.read_text(encoding="utf-8")
-        fixed_code = original_code
-        log_content = log_path.read_text(encoding="utf-8")
-
-        lines = fixed_code.splitlines()
-
-        # 1. Добавляем : в конце async def
-        for i, line in enumerate(lines):
-            if line.strip().startswith("async def") and not line.strip().endswith(":"):
-                lines[i] += ":"
-                logger.info(f"[FIX] Добавлен ':' в строке {i + 1}")
-
-        # 2. Закрываем f-строки
-        for i, line in enumerate(lines):
-            if 'f"' in line and not line.strip().endswith('"'):
-                lines[i] += '"'
-                logger.info(f"[FIX] Закрыта f-строка в строке {i + 1}")
-
-        fixed_code = "\n".join(lines)
-
-        try:
-            compile(fixed_code, str(script_path), 'exec')
-        except SyntaxError as e:
-            msg = str(e)
-            if "unmatched ')'" in msg or "was never closed" in msg or "unexpected EOF" in msg:
-                logger.warning(f"[WARN] Обрыв конструкции: {msg}")
-                fixed_code2 = fix_unclosed_syntax(fixed_code)
-
-                try:
-                    compile(fixed_code2, str(script_path), 'exec')
-
-                    # Бэкап
-                    backup_path = script_path.with_suffix(".backup")
-                    shutil.copy(script_path, backup_path)
-                    logger.info(f"[BACKUP] Сделана резервная копия: {backup_path}")
-
-                    # Сохраняем исправленный код
-                    script_path.write_text(fixed_code2, encoding="utf-8")
-                    logger.info(f"[FIX] Исправлены незакрытые конструкции в {script_path}")
-                    fixed_code = fixed_code2
-                except SyntaxError as e2:
-                    logger.error(f"[FAIL] Ошибка после попытки фикса: {e2}")
-                    return False
-            else:
-                logger.error(f"[FAIL] Синтаксическая ошибка: {msg}")
-                return False
-
-        # Проверяем финально через ast
-        try:
-            ast.parse(fixed_code)
-        except SyntaxError as e:
-            logger.error(f"[FAIL] Ошибка при ast.parse: {e}")
-            return False
-
-        if fixed_code != original_code:
-            script_path.write_text(fixed_code, encoding="utf-8")
-
-            diff = difflib.unified_diff(
-                original_code.splitlines(keepends=True),
-                fixed_code.splitlines(keepends=True),
-                fromfile=str(script_path),
-                tofile=str(script_path) + " (исправлен)",
-            )
-            diff_text = ''.join(diff)
-            logger.info(f"[DIFF] Изменения в {script_path}:\n{diff_text}")
-            logger.info(f"[SAVE] Код успешно обновлён: {script_path}")
-            return True
-        else:
-            logger.info("[INFO] Нет изменений — код в порядке.")
-            return False
-
-    except Exception as e:
-        logger.error(f"[ERROR] analyze_and_fix_script(): {e}")
-        return False
-
-
-async def main():
-    logger.info("[START] Запуск анализа и улучшения скриптов...")
-
-    # Читаем оригинальные коды
-    code_main = RITA_MAIN_PATH.read_text(encoding="utf-8") if RITA_MAIN_PATH.exists() else ""
-    code_diag = CHECK_DIAG_PATH.read_text(encoding="utf-8") if CHECK_DIAG_PATH.exists() else ""
-
-    # Удаляем дублирующийся код
-    code_main_unique, code_diag_unique = remove_duplicate_or_conflicting_code(code_main, code_diag)
-
-    # Сохраняем "очищенные" версии обратно
-    RITA_MAIN_PATH.write_text(code_main_unique, encoding="utf-8")
-    CHECK_DIAG_PATH.write_text(code_diag_unique, encoding="utf-8")
-
-    # Анализируем и фиксируем оба скрипта
-    fixed_main = await analyze_and_fix_script(RITA_MAIN_PATH, LOG_PATH)
-    fixed_diag = await analyze_and_fix_script(CHECK_DIAG_PATH, LOG_PATH)
-
-    # Генерируем новые функции с помощью OpenAI
-    new_func_main, new_func_diag = await generate_new_functionality(code_main_unique, code_diag_unique)
-
-    # Вставляем новые функции в код, если они есть
-    changed = False
-    if new_func_main:
-        logger.info("[INFO] Добавляем новую функцию в rita_main.py")
-        with open(RITA_MAIN_PATH, "a", encoding="utf-8") as f:
-            f.write("\n\n# --- Автоматически сгенерированная функция ---\n")
-            f.write(new_func_main)
-        changed = True
-
-    if new_func_diag:
-        logger.info("[INFO] Добавляем новую функцию в check_bot_diagnostics.py")
-        with open(CHECK_DIAG_PATH, "a", encoding="utf-8") as f:
-            f.write("\n\n# --- Автоматически сгенерированная функция ---\n")
-            f.write(new_func_diag)
-        changed = True
-
-    if changed:
-        logger.info("[INFO] Сохраняем изменения и создаём бэкапы...")
-        shutil.copy(RITA_MAIN_PATH, RITA_MAIN_PATH.with_suffix(".backup"))
-        shutil.copy(CHECK_DIAG_PATH, CHECK_DIAG_PATH.with_suffix(".backup"))
-
-    logger.info("[DONE] Анализ и улучшение завершены.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Основной запуск бота
 import asyncio
 import nest_asyncio
@@ -4201,3 +3835,52 @@ if __name__ == "__main__":
     finally:
         if not loop.is_closed():
             loop.close()
+
+
+
+import asyncio
+from telegram.constants import ParseMode
+
+import pathlib
+
+def safe_get_parent(path):
+    if path is None:
+        return None
+    if isinstance(path, str):
+        path = pathlib.Path(path)
+    try:
+        parent = safe_get_parent(path)
+        if isinstance(parent, pathlib.Path):
+            return parent
+        else:
+            return None
+    except Exception:
+        return None
+
+def safe_path_join(parent, child):
+    try:
+        if parent is None:
+            return pathlib.Path(child)
+        else:
+            return pathlib.Path(parent) / child
+    except Exception:
+        return pathlib.Path(child)
+
+
+async def send_admin_message(bot, chat_id: int, text: str):
+    """
+    Отправка сообщения админу в Telegram с корректной обработкой event loop.
+    """
+    try:
+        if not isinstance(text, str):
+            text = str(text)
+
+        await bot.send_message(
+            chat_id=chat_id,
+            text=text,
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True,
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Ошибка отправки сообщения админу: {e}")

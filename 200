@@ -1,0 +1,66 @@
+import re
+from pathlib import Path
+
+def fix_latin1_encoding_issues(file_path: Path) -> bool:
+    """
+    Найти в файле открытие файлов и настройку логгера, которые используют
+    по умолчанию latin-1 (без указания encoding),
+    и добавить явно encoding='utf-8'.
+
+    Возвращает True, если изменения внесены, иначе False.
+    """
+
+    text = file_path.read_text(encoding="utf-8", errors="replace")
+
+    original_text = text
+
+    # --- Исправляем open(...) без encoding
+    # Пример: open("filename", "w") -> open("filename", "w", encoding="utf-8")
+    text = re.sub(
+        r'open\s*([^,]+),\s*([\'"][rwab+]+[\'"])\s*',
+        r'open(\1, \2, encoding="utf-8")',
+        text
+    )
+
+    # --- Исправляем logging.basicConfig без encoding
+    # Если есть строка вида logging.basicConfig(filename=..., level=...)
+    # добавим encoding='utf-8', если его нет
+    def add_encoding_to_basicconfig(match):
+        params = match.group(1)
+        if 'encoding' in params:
+            return match.group(0)  # encoding уже есть
+        if params.strip():
+            return f'logging.basicConfig({params}, encoding="utf-8")'
+        else:
+            return 'logging.basicConfig(encoding="utf-8")'
+
+    text = re.sub(
+        r'logging\.basicConfig(.*?)',
+        add_encoding_to_basicconfig,
+        text,
+        flags=re.DOTALL
+    )
+
+    # --- Исправляем создание FileHandler без encoding
+    # Пример: logging.FileHandler("app.log") -> logging.FileHandler("app.log", encoding="utf-8")
+    text = re.sub(
+        r'logging\.FileHandler\s*([^,]+)\s*',
+        r'logging.FileHandler(\1, encoding="utf-8")',
+        text
+    )
+
+    if text != original_text:
+        backup_path = file_path.with_suffix(file_path.suffix + ".backup_encoding_fix")
+        file_path.rename(backup_path)  # делаем бэкап оригинала
+        file_path.write_text(text, encoding="utf-8")
+        print(f"[PATCH] Добавлен encoding='utf-8' в {file_path.name}, оригинал сохранён как {backup_path.name}")
+        return True
+    else:
+        print(f"[PATCH] В {file_path.name} изменений не требуется")
+        return False
+
+
+# --- Пример использования
+if __name__ == "__main__":
+    path_to_script = Path("check_bot_diagnostics.py")
+    fix_latin1_encoding_issues(path_to_script)

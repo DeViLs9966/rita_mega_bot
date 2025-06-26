@@ -1,0 +1,83 @@
+import os
+import shutil
+import re
+
+FILES_TO_PATCH = ["rita_main.py", "check_bot_diagnostics.py"]
+
+# Исправленная функция отправки сообщений админу с правильным asyncio и Telegram API
+NEW_SEND_ADMIN_MESSAGE_FUNC = """
+import asyncio
+from telegram.constants import ParseMode
+
+async def send_admin_message(bot, chat_id: int, text: str):
+    \"""
+    Отправка сообщения админу в Telegram с корректной обработкой event loop.
+    \"""
+    try:
+        if not isinstance(text, str):
+            text = str(text)
+
+        await bot.send_message(
+            chat_id=chat_id,
+            text=text,
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True,
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Ошибка отправки сообщения админу: {e}")
+"""
+
+def backup_file(filename):
+    backup_name = filename + ".bak"
+    shutil.copy(filename, backup_name)
+    print(f"[Backup] Создан файл резервной копии: {backup_name}")
+
+def patch_file(filename):
+    print(f"[Patch] Обработка файла: {filename}")
+
+    with open(filename, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Создадим бэкап
+    backup_file(filename)
+
+    # Удаляем старую функцию send_admin_message, если есть
+    # Ищем определение функции по названию
+    pattern = re.compile(r"async def send_admin_message.*?:.*?(?=^async def |\Z)", re.DOTALL | re.MULTILINE)
+    if pattern.search(content):
+        content = pattern.sub(NEW_SEND_ADMIN_MESSAGE_FUNC, content)
+        print(f"[Patch] Заменена функция send_admin_message в {filename}")
+    else:
+        # Если функции не нашли, просто добавим в конец
+        content += "\n\n" + NEW_SEND_ADMIN_MESSAGE_FUNC
+        print(f"[Patch] Добавлена функция send_admin_message в конец {filename}")
+
+    # Проверим и добавим импорт asyncio и telegram.constants, если отсутствуют
+    if "import asyncio" not in content:
+        content = "import asyncio\n" + content
+        print("[Patch] Добавлен импорт asyncio")
+    if "from telegram.constants import ParseMode" not in content:
+        # Добавим после импорта asyncio (если есть), иначе в начало
+        content = re.sub(r"(import asyncio\n)?", r"\1from telegram.constants import ParseMode\n", content, count=1)
+        print("[Patch] Добавлен импорт ParseMode")
+
+    # Исправление ошибки '.name' у строк (ищем pattern "some_string.name" и заменяем на просто some_string)
+    # Важно: не трогаем реальные объекты, только строки в коде, поэтому аккуратно с заменой.
+    # Будем искать строки вида: '...'.name и заменять на '...'
+    content = re.sub(r'(".*?"|\'.*?\')\.name', r'\1', content)
+    print("[Patch] Удалены вызовы .name у строк")
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(content)
+    print(f"[Patch] Файл {filename} успешно обновлён.\n")
+
+def main():
+    for file in FILES_TO_PATCH:
+        if os.path.exists(file):
+            patch_file(file)
+        else:
+            print(f"[Warn] Файл {file} не найден!")
+
+if __name__ == "__main__":
+    main()

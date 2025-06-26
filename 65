@@ -1,0 +1,95 @@
+import re
+import os
+from pathlib import Path
+
+FILE_PATH = Path("check_bot_diagnostics.py")
+BACKUP_PATH = FILE_PATH.with_suffix(".py.bak")
+
+PATCH_FUNCTION = """
+import aiohttp
+import logging
+
+async def send_admin_message(chat_id: int, text: str):
+    \"""
+    Отправка сообщения админу в Telegram через HTTP API.
+    \"""
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": text
+    }
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload) as resp:
+                if resp.status == 200:
+                    logging.info(f"✅ Сообщение отправлено админу: {text}")
+                else:
+                    error_text = await resp.text()
+                    logging.error(f"❌ Ошибка при отправке админу: {error_text}")
+    except Exception as e:
+        logging.error(f"❌ Исключение при отправке админу: {e}")
+"""
+
+def backup_file():
+    if BACKUP_PATH.exists():
+        print(f"⚠️ Бэкап уже существует: {BACKUP_PATH}")
+    else:
+        os.rename(FILE_PATH, BACKUP_PATH)
+        print(f"✅ Создан бэкап файла: {BACKUP_PATH}")
+
+def fix_send_admin_message_function(text):
+    # Удаляем старое определение send_admin_message (любое, что начинается с def или async def)
+    # Для простоты - удаляем все строки с send_admin_message до следующей пустой строки или def другого
+    pattern = re.compile(
+        r"(async def|def) send_admin_message.*?:.*?(?=(^\s*(async def|def) |\Z))",
+        re.DOTALL | re.MULTILINE
+    )
+    text_new = re.sub(pattern, "", text)
+    # Добавляем новое определение в начало
+    text_new = PATCH_FUNCTION.strip() + "\n\n" + text_new.strip() + "\n"
+    return text_new
+
+def fix_send_admin_message_calls(text):
+    # Найти все вызовы send_admin_message и исправить аргументы на (TELEGRAM_ADMIN_ID, message)
+    # Для упрощения заменим вызовы send_admin_message( с одним аргументом или неправильным количеством на нужный вариант
+    # Лучше сделать замену там, где встречается send_admin_message(...), если аргументов !=2, заменить на правильный вызов.
+    # Но чтобы не ломать логику, заменим в report_loop и похожих местах на await send_admin_message(TELEGRAM_ADMIN_ID, message)
+    # В этом патче заменим вызов с 1 аргументом или с 3 аргументами на нужный формат
+    pattern_call = re.compile(r"await send_admin_message[^)]*")
+    def repl(m):
+        return "await send_admin_message(TELEGRAM_ADMIN_ID, message)"
+    text_new = pattern_call.sub(repl, text)
+    return text_new
+
+def add_imports_if_missing(text):
+    imports = []
+    if "import aiohttp" not in text:
+        imports.append("import aiohttp")
+    if "import logging" not in text:
+        imports.append("import logging")
+    if not imports:
+        return text
+    # Добавляем сразу после первых импортов или в начало файла
+    lines = text.splitlines()
+    insert_pos = 0
+    for i, line in enumerate(lines):
+        if line.startswith("import ") or line.startswith("from "):
+            insert_pos = i+1
+    for imp in reversed(imports):
+        lines.insert(insert_pos, imp)
+    return "\n".join(lines)
+
+def main():
+    if not FILE_PATH.exists():
+        print(f"❌ Файл {FILE_PATH} не найден")
+        return
+    text = FILE_PATH.read_text(encoding="utf-8")
+    backup_file()
+    text = fix_send_admin_message_function(text)
+    text = fix_send_admin_message_calls(text)
+    text = add_imports_if_missing(text)
+    FILE_PATH.write_text(text, encoding="utf-8")
+    print(f"✅ Патч успешно применён к {FILE_PATH}!")
+
+if __name__ == "__main__":
+    main()

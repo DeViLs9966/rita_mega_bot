@@ -1,0 +1,27 @@
+import re
+import os
+
+FILE = "check_bot_diagnostics.py"
+BACKUP = FILE + ".bak"
+
+if not os.path.exists(BACKUP):
+    with open(FILE, "r", encoding="utf-8") as f:
+        original = f.read()
+    with open(BACKUP, "w", encoding="utf-8") as f:
+        f.write(original)
+    print("✅ Бэкап создан")
+
+with open(FILE, "r", encoding="utf-8") as f:
+    content = f.read()
+
+# Заменим вызовы вида: await send_admin_message(...Один аргумент...)
+fixed = re.sub(
+    r'await send_admin_message\s*(?!TELEGRAM_ADMIN_ID)([^,)]+)\s*',
+    r'await send_admin_message(TELEGRAM_ADMIN_ID, \1)',
+    content
+)
+
+with open(FILE, "w", encoding="utf-8") as f:
+    f.write(fixed)
+
+print("✅ Все вызовы send_admin_message(...) с одним аргументом исправлены.")

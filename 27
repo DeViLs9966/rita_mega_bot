@@ -1,0 +1,81 @@
+import os
+import re
+from shutil import copy2
+
+def backup_file(path):
+    backup_path = path + ".bak"
+    copy2(path, backup_path)
+    print(f"[Backup] Создан файл резервной копии: {backup_path}")
+
+def safe_get_name_code():
+    return '''
+def safe_get_name(obj):
+    if hasattr(obj, 'name') and not isinstance(obj, str):
+        return obj.name
+    else:
+        return str(obj)
+'''
+
+def safe_send_message_code():
+    return '''
+import asyncio
+
+async def safe_send_message(bot, chat_id, text, **kwargs):
+    try:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        if loop.is_running():
+            await bot.send_message(chat_id=chat_id, text=text, **kwargs)
+        else:
+            loop.run_until_complete(bot.send_message(chat_id=chat_id, text=text, **kwargs))
+    except Exception as e:
+        print(f"[ERROR] Ошибка отправки сообщения: {e}")
+'''
+
+def process_file(filename):
+    print(f"[Patch] Обработка файла: {filename}")
+    backup_file(filename)
+
+    with open(filename, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Добавляем safe_get_name, если нет
+    if "def safe_get_name(" not in content:
+        content += "\n\n" + safe_get_name_code()
+        print(f"[Patch] Добавлена функция safe_get_name в {filename}")
+
+    # Добавляем safe_send_message, если нет
+    if "async def safe_send_message(" not in content:
+        # Добавим в начало файла после импорта asyncio
+        if "import asyncio" in content:
+            content = content.replace("import asyncio", "import asyncio\n" + safe_send_message_code())
+            print(f"[Patch] Добавлена функция safe_send_message в {filename}")
+        else:
+            # Просто добавить в начало
+            content = safe_send_message_code() + "\n\n" + content
+            print(f"[Patch] Добавлена функция safe_send_message и импорт asyncio в {filename}")
+
+    # Исправляем все .name у строк на safe_get_name(...)
+    # Ищем все obj.name и заменяем на safe_get_name(obj)
+    pattern = re.compile(r"(\b\w+)\.name")
+    def replacer(m):
+        var = m.group(1)
+        return f"safe_get_name({var})"
+    new_content = pattern.sub(replacer, content)
+
+    if new_content != content:
+        content = new_content
+        print(f"[Patch] Заменены обращения .name на safe_get_name() в {filename}")
+
+    # Заменяем вызовы отправки сообщений на safe_send_message
+    # Например, context.bot.send_message(...) или bot.send_message(...)
+    # Будем искать строки с .send_message и обернём их в await safe_send_message(...)
+    # Для простоты заменим `await bot.send_message(` и `await context.bot.send_message(`
+content = re.sub(
+    pattern=r"await\s+(context\.bot|bot)\.send_message",
+    repl="...",
+    string=content
+)

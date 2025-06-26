@@ -1,0 +1,31 @@
+import re
+from pathlib import Path
+
+def update_log_paths_in_script(script_path: Path):
+    if not script_path.exists():
+        print(f"[WARN] Файл {script_path} не найден.")
+        return
+
+    content = script_path.read_text(encoding="utf-8")
+
+    # Паттерны для поиска путей логов, которые нужно заменить на logs/...
+    patterns = [
+        r'LOG_PATH\s*=\s*Path["\'].*?["\']',
+        r'CHECK_DIAG_LOG_PATH\s*=\s*Path["\'].*?["\']',
+        # Добавь сюда другие переменные путей, если есть
+    ]
+
+    for pattern in patterns:
+        matches = re.findall(pattern, content)
+        for match in matches:
+            # Заменяем путь на logs/бот_что-то.log
+            new_path = re.sub(r'Path["\'].*?["\']', 'Path("logs/bot.log")', match)
+            content = content.replace(match, new_path)
+            print(f"[INFO] В {script_path.name} заменён путь: {match} → {new_path}")
+
+    script_path.write_text(content, encoding="utf-8")
+    print(f"[INFO] Файл {script_path} обновлён.")
+
+if __name__ == "__main__":
+    update_log_paths_in_script(Path("rita_main.py"))
+    update_log_paths_in_script(Path("check_bot_diagnostics.py"))

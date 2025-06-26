@@ -1,0 +1,49 @@
+# fix_admin_message_call.py
+import os
+
+TARGET_FILE = "check_bot_diagnostics.py"
+BACKUP_FILE = TARGET_FILE + ".bak"
+
+def apply_fix():
+    if not os.path.exists(TARGET_FILE):
+        print(f"❌ Файл {TARGET_FILE} не найден.")
+        return
+
+    with open(TARGET_FILE, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    if not os.path.exists(BACKUP_FILE):
+        with open(BACKUP_FILE, 'w', encoding='utf-8') as f:
+            f.writelines(lines)
+        print(f"✅ Создан бэкап: {BACKUP_FILE}")
+    else:
+        print(f"⚠️ Бэкап уже существует: {BACKUP_FILE}")
+
+    fixed_lines = []
+    changed = False
+
+    for line in lines:
+        if "send_admin_message(" in line and "TELEGRAM_ADMIN_ID" in line:
+            # Автоматически заменяем вызов на верный
+            indent = ' ' * (len(line) - len(line.lstrip()))
+            message_part = line.split(",")[-1].strip().rstrip(")\n")
+            new_line = f"{indent}await send_admin_message({message_part})\n"
+            fixed_lines.append(new_line)
+            changed = True
+        elif "send_admin_message_sync(" in line and "TELEGRAM_ADMIN_ID" in line:
+            indent = ' ' * (len(line) - len(line.lstrip()))
+            message_part = line.split(",")[-1].strip().rstrip(")\n")
+            new_line = f"{indent}send_admin_message_sync({message_part})\n"
+            fixed_lines.append(new_line)
+            changed = True
+        else:
+            fixed_lines.append(line)
+
+    if changed:
+        with open(TARGET_FILE, 'w', encoding='utf-8') as f:
+            f.writelines(fixed_lines)
+        print(f"✅ Все вызовы send_admin_message() успешно исправлены.")
+    else:
+        print(f"ℹ️ Замены не требовались — всё уже корректно.")
+
+apply_fix()

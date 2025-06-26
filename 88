@@ -1,0 +1,40 @@
+import os
+import re
+
+TELEGRAM_ADMIN_ID = 558079551
+FILES_TO_PATCH = ["check_bot_diagnostics.py", "rita_main.py"]
+
+def patch_file(filename):
+    if not os.path.exists(filename):
+        print(f"❌ Файл {filename} не найден.")
+        return
+
+    # Бэкап
+    backup_path = filename + ".bak"
+    if not os.path.exists(backup_path):
+        with open(filename, "r", encoding="utf-8") as f:
+            original = f.read()
+        with open(backup_path, "w", encoding="utf-8") as f:
+            f.write(original)
+        print(f"✅ Бэкап создан: {backup_path}")
+    else:
+        print(f"⚠️ Бэкап уже существует: {backup_path}")
+
+    with open(filename, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Патчим вызовы вида: await send_admin_message("текст")
+    pattern = r"await send_admin_message\s*(\"[^\"]+\"|\'[^\']+\')\s*"
+    replacement = rf"await send_admin_message({TELEGRAM_ADMIN_ID}, \1)"
+    new_content = re.sub(pattern, replacement, content)
+
+    if content == new_content:
+        print(f"ℹ️ В файле {filename} вызовов send_admin_message, требующих исправления, не найдено.")
+    else:
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        print(f"✅ Вызовы send_admin_message(...) с одним аргументом в {filename} успешно исправлены.")
+
+if __name__ == "__main__":
+    for file in FILES_TO_PATCH:
+        patch_file(file)

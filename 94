@@ -1,0 +1,39 @@
+import os
+import re
+
+def find_send_admin_message_calls(path):
+    pattern = re.compile(r'send_admin_message\s*(.*?)')
+    # Регулярка ищет вызовы send_admin_message(...)
+
+    for root, dirs, files in os.walk(path):
+        for filename in files:
+            if filename.endswith('.py'):
+                filepath = os.path.join(root, filename)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                for i, line in enumerate(lines, 1):
+                    match = pattern.search(line)
+                    if match:
+                        args = match.group(1)
+                        # Разделим аргументы по запятым с учётом вложенных скобок
+                        # Для простоты можно просто считать количество запятых не внутри скобок
+                        arg_count = 0
+                        depth = 0
+                        for ch in args:
+                            if ch == '(':
+                                depth +=1
+                            elif ch == ')':
+                                depth -=1
+                            elif ch == ',' and depth == 0:
+                                arg_count += 1
+                        # Кол-во аргументов = количество запятых + 1, если args не пустая строка
+                        if args.strip():
+                            arg_count += 1
+                        else:
+                            arg_count = 0
+                        if arg_count < 2:
+                            print(f"{filepath}:{i}: Недостаточно аргументов в send_admin_message({args})")
+
+if __name__ == '__main__':
+    # Путь к папке с кодом — подкорректируй если надо
+    find_send_admin_message_calls('./rita_mega_bot')
