@@ -54,7 +54,7 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OWNER_TELEGRAM_ID = int(os.getenv("OWNER_TELEGRAM_ID", "0"))
 
 AI_MODES = ["gpt4", "gpt2", "gog", "ht"]
-current_mode = "gpt4"
+current_mode = "gpt2"
 
 
 
@@ -285,6 +285,35 @@ async def switch_mode(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Неизвестная команда режима.")
 
 # --- Основной обработчик сообщений ---
+
+
+
+
+
+from telegram import ChatAction
+
+async def handle_all_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text or ""
+
+    await update.message.chat.send_action(ChatAction.TYPING)
+
+    global current_mode
+
+    if current_mode == "gpt4":
+        response = call_openai_gpt4(text)
+    elif current_mode == "gpt2":
+        response = call_huggingface_gpt2(text)
+    elif current_mode == "gog":
+        response = call_google_search(text)
+    elif current_mode == "ht":
+        response = call_huggingface_search(text)
+    else:
+        response = "Неизвестный режим."
+
+    await update.message.reply_text(response)
+
+
+
 
 
 
@@ -534,6 +563,15 @@ if __name__ == "__main__":
         remove_lock_file()
 
 
+
+
+if __name__ == '__main__':
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
 
 
 if __name__ == '__main__':
